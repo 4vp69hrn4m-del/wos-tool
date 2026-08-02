@@ -33,6 +33,7 @@ type SvsRound = {
   eventDate: string | null;
   opponent: string | null;
   status: string | null;
+  result: string | null;
   timeSlots: TimeSlot[];
   participants: Participant[];
 };
@@ -61,9 +62,14 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   const [leaderDrafts, setLeaderDrafts] = useState<Record<number, LeaderDraft>>({});
 
+  const [statusDraft, setStatusDraft] = useState("編成準備中");
+  const [resultDraft, setResultDraft] = useState("");
+
   async function load() {
     const data = await fetch(`/api/svs-rounds/${params.id}`).then((r) => r.json());
     setRound(data);
+    setStatusDraft(data.status || "編成準備中");
+    setResultDraft(data.result || "");
     const drafts: Record<number, LeaderDraft> = {};
     for (const t of data.timeSlots as TimeSlot[]) {
       drafts[t.id] = {
@@ -164,6 +170,15 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     await load();
   }
 
+  async function saveStatusAndResult() {
+    await fetch(`/api/svs-rounds/${params.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: statusDraft, result: resultDraft }),
+    });
+    await load();
+  }
+
   if (!round) return <div>読み込み中...</div>;
 
   const availablePresets = presetLabels.filter(
@@ -183,7 +198,23 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       <div className="card">
         <div>開催日: {round.eventDate ? round.eventDate.slice(0, 10) : "未定"}</div>
         <div>対戦相手: {round.opponent || "未定"}</div>
-        <div>状態: {round.status || "-"}</div>
+
+        <label>状態</label>
+        <select value={statusDraft} onChange={(e) => setStatusDraft(e.target.value)}>
+          <option value="編成準備中">編成準備中</option>
+          <option value="編成確定">編成確定</option>
+          <option value="開催中">開催中</option>
+          <option value="終了">終了</option>
+        </select>
+
+        <label>勝敗</label>
+        <select value={resultDraft} onChange={(e) => setResultDraft(e.target.value)}>
+          <option value="">未定</option>
+          <option value="win">勝ち</option>
+          <option value="lose">負け</option>
+        </select>
+
+        <button onClick={saveStatusAndResult}>状態・勝敗を保存</button>
       </div>
 
       <div className="card">
