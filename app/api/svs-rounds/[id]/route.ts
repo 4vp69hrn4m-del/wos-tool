@@ -10,7 +10,11 @@ export async function GET(
     where: { id },
     include: {
       timeSlots: {
-        include: { rallyLeader: true, garrisonLeader: true },
+        include: {
+          rallyLeader: true,
+          garrisonLeader: true,
+          garrisonMembers: { include: { participant: true } },
+        },
       },
       participants: {
         include: { timeSlots: { include: { timeSlot: true } } },
