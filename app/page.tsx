@@ -3,11 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type TimeSlot = { id: number; label: string };
+type GarrisonMember = { participantId: number };
+type TimeSlot = {
+  id: number;
+  label: string;
+  garrisonLeaderId: number | null;
+  garrisonMembers: GarrisonMember[];
+};
 type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
 type Participant = {
   id: number;
   playerName: string;
+  homeAlliance: string | null;
   alliance: string | null;
   hasT12: boolean;
   t12ShieldSkill: number | null;
@@ -24,6 +31,42 @@ type SvsRound = {
 };
 
 const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
+
+function sortBySkill(members: Participant[]) {
+  return [...members].sort(
+    (a, b) =>
+      (b.t12ShieldSkill ?? 0) +
+      (b.t12SpearSkill ?? 0) +
+      (b.t12BowSkill ?? 0) -
+      ((a.t12ShieldSkill ?? 0) + (a.t12SpearSkill ?? 0) + (a.t12BowSkill ?? 0))
+  );
+}
+
+function orderWithLeaderFirst(members: Participant[], leaderId: number | null) {
+  const leader = members.find((m) => m.id === leaderId);
+  const rest = sortBySkill(members.filter((m) => m.id !== leaderId));
+  return leader ? [leader, ...rest] : rest;
+}
+
+function ParticipantLine({ p, isLeader }: { p: Participant; isLeader?: boolean }) {
+  return (
+    <div style={{ fontSize: "0.9rem", marginTop: 6 }}>
+      ・{p.playerName}
+      {isLeader && (
+        <span style={{ color: "#38bdf8", fontSize: "0.75rem", fontWeight: 600 }}>
+          {" "}
+          駐屯リーダー
+        </span>
+      )}
+      {p.homeAlliance && (
+        <span style={{ color: "#94a3b8" }}> [{p.homeAlliance}]</span>
+      )}{" "}
+      {p.hasT12
+        ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${p.t12BowSkill ?? "-"}`
+        : "T12なし"}
+    </div>
+  );
+}
 
 export default function Home() {
   const [latestRound, setLatestRound] = useState<SvsRound | null>(null);
@@ -67,36 +110,72 @@ export default function Home() {
               (詳細を開く)
             </Link>
           </h1>
+          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+            駐屯メンバーに選ばれた人だけを表示しています。
+          </p>
           {[...latestRound.timeSlots]
             .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
             .map((t) => {
-              const inSlot = latestRound.participants
-                .filter((p) => p.timeSlots.some((ps) => ps.timeSlotId === t.id))
-                .sort(
-                  (a, b) =>
-                    (b.t12ShieldSkill ?? 0) +
-                    (b.t12SpearSkill ?? 0) +
-                    (b.t12BowSkill ?? 0) -
-                    ((a.t12ShieldSkill ?? 0) + (a.t12SpearSkill ?? 0) + (a.t12BowSkill ?? 0))
-                );
+              const garrisonIds = t.garrisonMembers.map((g) => g.participantId);
+              const inSlot = latestRound.participants.filter((p) =>
+                garrisonIds.includes(p.id)
+              );
+              const vbvMembers = orderWithLeaderFirst(
+                inSlot.filter((p) => p.alliance === "vbv"),
+                t.garrisonLeaderId
+              );
+              const cbsMembers = orderWithLeaderFirst(
+                inSlot.filter((p) => p.alliance === "cbs"),
+                t.garrisonLeaderId
+              );
+              const otherMembers = orderWithLeaderFirst(
+                inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
+                t.garrisonLeaderId
+              );
+
               return (
                 <div className="card" key={t.id}>
                   <strong>
                     {t.label}({inSlot.length}人)
                   </strong>
                   {inSlot.length === 0 && (
-                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>まだ参加者がいません。</p>
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      まだ駐屯メンバーが選ばれていません。
+                    </p>
                   )}
-                  {inSlot.map((p) => (
-                    <div key={p.id} style={{ fontSize: "0.9rem", marginTop: 6 }}>
-                      ・{p.playerName}({p.alliance || "-"}){" "}
-                      {p.hasT12
-                        ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-                            p.t12BowSkill ?? "-"
-                          }`
-                        : "T12なし"}
+
+                  {vbvMembers.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                        vbv({vbvMembers.length}人)
+                      </div>
+                      {vbvMembers.map((p) => (
+                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
+                      ))}
                     </div>
-                  ))}
+                  )}
+
+                  {cbsMembers.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                        cbs({cbsMembers.length}人)
+                      </div>
+                      {cbsMembers.map((p) => (
+                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
+                      ))}
+                    </div>
+                  )}
+
+                  {otherMembers.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 600 }}>
+                        未設定({otherMembers.length}人)
+                      </div>
+                      {otherMembers.map((p) => (
+                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
