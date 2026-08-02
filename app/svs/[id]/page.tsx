@@ -460,26 +460,90 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
               駐屯メンバー選択({draft.garrisonMemberIds.length}/12人)
             </p>
-            {inSlot.map((p) => (
-              <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={draft.garrisonMemberIds.includes(p.id)}
-                  onChange={() => toggleGarrisonMember(t.id, p.id)}
-                  style={{ width: "auto" }}
-                />
-                {p.playerName}
-                <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-                  (
-                  {p.hasT12
-                    ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-                        p.t12BowSkill ?? "-"
-                      }`
-                    : "T12なし"}
-                  )
-                </span>
-              </label>
-            ))}
+            {(["vbv", "cbs"] as const).map((allianceKey) => {
+              const members = inSlot.filter((p) => p.alliance === allianceKey);
+              if (members.length === 0) return null;
+              return (
+                <div key={allianceKey} style={{ marginBottom: 8 }}>
+                  <div
+                    style={{
+                      color: "#38bdf8",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      marginTop: 8,
+                    }}
+                  >
+                    {allianceKey}
+                  </div>
+                  {members.map((p) => (
+                    <label
+                      key={p.id}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={draft.garrisonMemberIds.includes(p.id)}
+                        onChange={() => toggleGarrisonMember(t.id, p.id)}
+                        style={{ width: "auto" }}
+                      />
+                      {p.playerName}
+                      <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                        (
+                        {p.hasT12
+                          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                              p.t12BowSkill ?? "-"
+                            }`
+                          : "T12なし"}
+                        )
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
+            {(() => {
+              const unset = inSlot.filter(
+                (p) => p.alliance !== "vbv" && p.alliance !== "cbs"
+              );
+              if (unset.length === 0) return null;
+              return (
+                <div style={{ marginBottom: 8 }}>
+                  <div
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      marginTop: 8,
+                    }}
+                  >
+                    未設定
+                  </div>
+                  {unset.map((p) => (
+                    <label
+                      key={p.id}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={draft.garrisonMemberIds.includes(p.id)}
+                        onChange={() => toggleGarrisonMember(t.id, p.id)}
+                        style={{ width: "auto" }}
+                      />
+                      {p.playerName}
+                      <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                        (
+                        {p.hasT12
+                          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                              p.t12BowSkill ?? "-"
+                            }`
+                          : "T12なし"}
+                        )
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })()}
 
             <button onClick={() => saveLeaders(t.id)} style={{ marginTop: 12 }}>
               設定を保存
