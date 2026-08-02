@@ -21,10 +21,12 @@ model Hero {
   lethality Int?
 
   // 主要スキル効果(計算に使う数値。最大2つまで)
-  skillEffectStat1  String? // "atk" / "def" / "hp" / "lethality"
-  skillEffectValue1 Int?    // パーセント(例: 30 なら +30%)
-  skillEffectStat2  String?
-  skillEffectValue2 Int?
+  skillEffectTarget1 String? // "self"(自分の兵種が上昇) / "enemy"(敵の兵種が下降)
+  skillEffectStat1   String? // "atk" / "def" / "hp" / "lethality"
+  skillEffectValue1  Int?    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
+  skillEffectTarget2 String?
+  skillEffectStat2   String?
+  skillEffectValue2  Int?
 
   skills    String? // スキル名・効果の自由メモ(計算には使わない参考情報)
   notes     String?
