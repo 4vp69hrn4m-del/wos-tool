@@ -8,7 +8,7 @@ export async function GET(
   const id = Number(params.id);
   const round = await prisma.svsRound.findUnique({
     where: { id },
-    include: { timeSlots: true },
+    include: { timeSlots: true, participants: true },
   });
   if (!round) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
