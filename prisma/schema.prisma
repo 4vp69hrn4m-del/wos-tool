@@ -84,7 +84,8 @@ model SvsRound {
   status    String?  // 例: "編成準備中" など自由入力
   createdAt DateTime @default(now())
 
-  timeSlots SvsTimeSlot[]
+  timeSlots    SvsTimeSlot[]
+  participants SvsParticipant[]
 }
 
 // SVS開催回の中の時間帯(例: 21:00〜23:00)
@@ -94,4 +95,19 @@ model SvsTimeSlot {
   svsRound   SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
   label      String   // 例: "21:00〜23:00"
   createdAt  DateTime @default(now())
+}
+
+// SVS開催回への参加者登録
+model SvsParticipant {
+  id             Int      @id @default(autoincrement())
+  svsRoundId     Int
+  svsRound       SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
+  playerName     String
+  availableFrom  String? // 例: "21:00"
+  availableTo    String? // 例: "23:00"
+  hasT12         Boolean  @default(false)
+  t12ShieldSkill Int? // 盾兵スキルレベル 0〜3
+  t12SpearSkill  Int? // 槍兵スキルレベル 0〜3
+  t12BowSkill    Int? // 弓兵スキルレベル 0〜3
+  createdAt      DateTime @default(now())
 }
