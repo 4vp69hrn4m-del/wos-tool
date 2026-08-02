@@ -162,17 +162,23 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     }));
   }
 
-  function toggleGarrisonMember(slotId: number, participantId: number) {
+  function toggleGarrisonMember(slotId: number, participant: Participant) {
     setLeaderDrafts((prev) => {
       const current = prev[slotId]?.garrisonMemberIds || [];
-      const isSelected = current.includes(participantId);
-      if (!isSelected && current.length >= 12) {
-        alert("駐屯メンバーは最大12人までです。");
-        return prev;
+      const isSelected = current.includes(participant.id);
+      if (!isSelected) {
+        const sameAllianceCount = current.filter((id) => {
+          const rp = round?.participants.find((x) => x.id === id);
+          return rp && rp.alliance === participant.alliance;
+        }).length;
+        if (sameAllianceCount >= 12) {
+          alert(`${participant.alliance || "未設定"}は最大12人までです。`);
+          return prev;
+        }
       }
       const next = isSelected
-        ? current.filter((id) => id !== participantId)
-        : [...current, participantId];
+        ? current.filter((id) => id !== participant.id)
+        : [...current, participant.id];
       return {
         ...prev,
         [slotId]: { ...prev[slotId], garrisonMemberIds: next },
@@ -458,11 +464,16 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             </div>
 
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-              駐屯メンバー選択({draft.garrisonMemberIds.length}/12人)
+              駐屯メンバー選択(vbv・cbsそれぞれ最大12人)
             </p>
             {(["vbv", "cbs"] as const).map((allianceKey) => {
-              const members = inSlot.filter((p) => p.alliance === allianceKey);
+              const members = inSlot
+                .filter((p) => p.alliance === allianceKey)
+                .sort((a, b) => totalSkill(b) - totalSkill(a));
               if (members.length === 0) return null;
+              const selectedCount = draft.garrisonMemberIds.filter((id) =>
+                members.some((m) => m.id === id)
+              ).length;
               return (
                 <div key={allianceKey} style={{ marginBottom: 8 }}>
                   <div
@@ -473,38 +484,48 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                       marginTop: 8,
                     }}
                   >
-                    {allianceKey}
+                    {allianceKey}({selectedCount}/12人)
                   </div>
-                  {members.map((p) => (
-                    <label
-                      key={p.id}
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={draft.garrisonMemberIds.includes(p.id)}
-                        onChange={() => toggleGarrisonMember(t.id, p.id)}
-                        style={{ width: "auto" }}
-                      />
-                      {p.playerName}
-                      <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-                        (
-                        {p.hasT12
-                          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-                              p.t12BowSkill ?? "-"
-                            }`
-                          : "T12なし"}
-                        )
-                      </span>
-                    </label>
-                  ))}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      columnGap: 12,
+                    }}
+                  >
+                    {members.map((p) => (
+                      <label
+                        key={p.id}
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={draft.garrisonMemberIds.includes(p.id)}
+                          onChange={() => toggleGarrisonMember(t.id, p)}
+                          style={{ width: "auto" }}
+                        />
+                        <span style={{ fontSize: "0.9rem" }}>
+                          {p.playerName}
+                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                            (
+                            {p.hasT12
+                              ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                  p.t12SpearSkill ?? "-"
+                                }/弓${p.t12BowSkill ?? "-"}`
+                              : "T12なし"}
+                            )
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               );
             })}
             {(() => {
-              const unset = inSlot.filter(
-                (p) => p.alliance !== "vbv" && p.alliance !== "cbs"
-              );
+              const unset = inSlot
+                .filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs")
+                .sort((a, b) => totalSkill(b) - totalSkill(a));
               if (unset.length === 0) return null;
               return (
                 <div style={{ marginBottom: 8 }}>
@@ -518,29 +539,39 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                   >
                     未設定
                   </div>
-                  {unset.map((p) => (
-                    <label
-                      key={p.id}
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={draft.garrisonMemberIds.includes(p.id)}
-                        onChange={() => toggleGarrisonMember(t.id, p.id)}
-                        style={{ width: "auto" }}
-                      />
-                      {p.playerName}
-                      <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-                        (
-                        {p.hasT12
-                          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-                              p.t12BowSkill ?? "-"
-                            }`
-                          : "T12なし"}
-                        )
-                      </span>
-                    </label>
-                  ))}
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      columnGap: 12,
+                    }}
+                  >
+                    {unset.map((p) => (
+                      <label
+                        key={p.id}
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={draft.garrisonMemberIds.includes(p.id)}
+                          onChange={() => toggleGarrisonMember(t.id, p)}
+                          style={{ width: "auto" }}
+                        />
+                        <span style={{ fontSize: "0.9rem" }}>
+                          {p.playerName}
+                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                            (
+                            {p.hasT12
+                              ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                  p.t12SpearSkill ?? "-"
+                                }/弓${p.t12BowSkill ?? "-"}`
+                              : "T12なし"}
+                            )
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               );
             })()}
