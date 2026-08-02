@@ -26,6 +26,7 @@ export async function POST(
     data: {
       svsRoundId,
       playerName: body.playerName,
+      alliance: body.alliance || null,
       hasT12: !!body.hasT12,
       t12ShieldSkill: toInt(body.t12ShieldSkill),
       t12SpearSkill: toInt(body.t12SpearSkill),
@@ -39,4 +40,3 @@ export async function POST(
 
   return NextResponse.json(participant);
 }
-
