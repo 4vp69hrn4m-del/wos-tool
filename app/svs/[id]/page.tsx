@@ -412,19 +412,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             </div>
 
             <div style={{ color: "#38bdf8", fontSize: "0.9rem", marginBottom: 4 }}>
-              T12合計Lv(全体) 盾
-              <span style={{ color: totalAll.shield > 24 ? "#f87171" : "inherit" }}>
-                {totalAll.shield}
-              </span>{" "}
-              / 槍
-              <span style={{ color: totalAll.spear > 24 ? "#f87171" : "inherit" }}>
-                {totalAll.spear}
-              </span>{" "}
-              / 弓
-              <span style={{ color: totalAll.bow > 24 ? "#f87171" : "inherit" }}>
-                {totalAll.bow}
-              </span>{" "}
-              /24
+              T12合計Lv(全体) 盾{totalAll.shield} / 槍{totalAll.spear} / 弓{totalAll.bow}
             </div>
             <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: 2 }}>
               vbv: 盾
