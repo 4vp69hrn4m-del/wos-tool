@@ -10,6 +10,7 @@ type SvsRound = {
   eventDate: string | null;
   opponent: string | null;
   status: string | null;
+  result: string | null;
   timeSlots: TimeSlot[];
 };
 
@@ -93,7 +94,15 @@ export default function SvsListPage() {
               開催日: {r.eventDate ? r.eventDate.slice(0, 10) : "未定"} / 対戦相手:{" "}
               {r.opponent || "未定"}
             </div>
-            <div>状態: {r.status || "-"}</div>
+            <div>
+              状態: {r.status || "-"}
+              {r.result === "win" && (
+                <span style={{ color: "#38bdf8" }}> / 勝ち</span>
+              )}
+              {r.result === "lose" && (
+                <span style={{ color: "#f87171" }}> / 負け</span>
+              )}
+            </div>
             <div>
               時間帯:{" "}
               {[...r.timeSlots]
