@@ -36,4 +36,66 @@ export default function Home() {
         setLoading(false);
         return;
       }
-      const detail = await fetch(`/api/svs-roun
+      const detail = await fetch(`/api/svs-rounds/${list[0].id}`).then((r) => r.json());
+      setLatestRound(detail);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  return (
+    <div>
+      <h1>WOS 編成分析ツール(vbv.cbs.ONK専用)</h1>
+      <div className="card">
+        <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
+        <p>
+          <Link href="/formations">→ 編成を登録する / 一覧を見る</Link>
+        </p>
+        <p>
+          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理</Link>
+        </p>
+        <p>
+          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
+        </p>
+      </div>
+
+      {!loading && latestRound && (
+        <>
+          <h1>
+            直近の開催回: {latestRound.roundName}{" "}
+            <Link href={`/svs/${latestRound.id}`} style={{ fontSize: "0.8rem" }}>
+              (詳細を開く)
+            </Link>
+          </h1>
+          {[...latestRound.timeSlots]
+            .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
+            .map((t) => {
+              const inSlot = latestRound.participants.filter((p) =>
+                p.timeSlots.some((ps) => ps.timeSlotId === t.id)
+              );
+              return (
+                <div className="card" key={t.id}>
+                  <strong>
+                    {t.label}({inSlot.length}人)
+                  </strong>
+                  {inSlot.length === 0 && (
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>まだ参加者がいません。</p>
+                  )}
+                  {inSlot.map((p) => (
+                    <div key={p.id} style={{ fontSize: "0.9rem", marginTop: 6 }}>
+                      ・{p.playerName}({p.alliance || "-"}){" "}
+                      {p.hasT12
+                        ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                            p.t12BowSkill ?? "-"
+                          }`
+                        : "T12なし"}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+        </>
+      )}
+    </div>
+  );
+}
