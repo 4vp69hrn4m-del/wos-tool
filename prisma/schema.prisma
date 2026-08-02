@@ -1,0 +1,61 @@
+// このファイルはDB(PostgreSQL)のテーブル設計です。
+// Railwayの環境変数 DATABASE_URL を読みに行きます。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// マスターデータ: 英雄
+model Hero {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  troopType String? // 歩兵 / 騎兵 / 弓兵 など
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// マスターデータ: 専門家
+model Expert {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// マスターデータ: ペット
+model Pet {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  skill     String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// 編成(自分の編成・相手の編成、どちらもこのテーブルに保存する)
+model Formation {
+  id        Int      @id @default(autoincrement())
+  label     String? // 「対〇〇同盟用」などメモ用の名前
+  side      String // "self" or "opponent"
+  formationType String? // "attack" or "defense"
+
+  hero1Name String?
+  hero2Name String?
+  hero3Name String?
+  expertName String?
+  petName    String?
+
+  // 兵種割合 (%)
+  infantryPct Int?
+  cavalryPct  Int?
+  archerPct   Int?
+
+  // 装備などは後で構造化する。まずはJSON文字列で自由記述。
+  equipmentNote String?
+
+  createdAt DateTime @default(now())
+}
