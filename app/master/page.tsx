@@ -142,6 +142,24 @@ export default function MasterPage() {
     await loadAll();
   }
 
+  async function deleteHero(id: number, name: string) {
+    if (!confirm(`「${name}」を削除しますか?`)) return;
+    await fetch(`/api/heroes/${id}`, { method: "DELETE" });
+    await loadAll();
+  }
+
+  async function deleteExpert(id: number, name: string) {
+    if (!confirm(`「${name}」を削除しますか?`)) return;
+    await fetch(`/api/experts/${id}`, { method: "DELETE" });
+    await loadAll();
+  }
+
+  async function deletePet(id: number, name: string) {
+    if (!confirm(`「${name}」を削除しますか?`)) return;
+    await fetch(`/api/pets/${id}`, { method: "DELETE" });
+    await loadAll();
+  }
+
   return (
     <div>
       <h1>マスターデータ管理</h1>
@@ -289,16 +307,40 @@ export default function MasterPage() {
               h.skillEffectValue2
             );
             return (
-              <div key={h.id} style={{ marginBottom: 8 }}>
-                ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}) 攻{h.atk ?? "-"} / 防
-                {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
-                {eff1 && <span> / スキル効果: {eff1}</span>}
-                {eff2 && <span>、{eff2}</span>}
-                {h.skills && (
-                  <div style={{ color: "#94a3b8", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                    {h.skills}
-                  </div>
-                )}
+              <div
+                key={h.id}
+                style={{
+                  marginBottom: 8,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
+              >
+                <div>
+                  ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}) 攻{h.atk ?? "-"} / 防
+                  {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
+                  {eff1 && <span> / スキル効果: {eff1}</span>}
+                  {eff2 && <span>、{eff2}</span>}
+                  {h.skills && (
+                    <div style={{ color: "#94a3b8", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
+                      {h.skills}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => deleteHero(h.id, h.name)}
+                  style={{
+                    marginTop: 0,
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    background: "#7f1d1d",
+                    color: "#fecaca",
+                    flexShrink: 0,
+                  }}
+                >
+                  削除
+                </button>
               </div>
             );
           })}
@@ -313,7 +355,29 @@ export default function MasterPage() {
 
         <div style={{ marginTop: 16 }}>
           {experts.map((ex) => (
-            <div key={ex.id}>・{ex.name}</div>
+            <div
+              key={ex.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <div>・{ex.name}</div>
+              <button
+                onClick={() => deleteExpert(ex.id, ex.name)}
+                style={{
+                  marginTop: 0,
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#7f1d1d",
+                  color: "#fecaca",
+                }}
+              >
+                削除
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -328,8 +392,30 @@ export default function MasterPage() {
 
         <div style={{ marginTop: 16 }}>
           {pets.map((p) => (
-            <div key={p.id}>
-              ・{p.name} {p.skill ? `(${p.skill})` : ""}
+            <div
+              key={p.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <div>
+                ・{p.name} {p.skill ? `(${p.skill})` : ""}
+              </div>
+              <button
+                onClick={() => deletePet(p.id, p.name)}
+                style={{
+                  marginTop: 0,
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#7f1d1d",
+                  color: "#fecaca",
+                }}
+              >
+                削除
+              </button>
             </div>
           ))}
         </div>
