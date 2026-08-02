@@ -30,14 +30,18 @@ export async function PATCH(
   const id = Number(params.id);
   const body = await req.json();
 
+  const data: Record<string, unknown> = {};
+  if (body.roundName !== undefined) data.roundName = body.roundName;
+  if (body.eventDate !== undefined) {
+    data.eventDate = body.eventDate ? new Date(body.eventDate) : null;
+  }
+  if (body.opponent !== undefined) data.opponent = body.opponent || null;
+  if (body.status !== undefined) data.status = body.status || null;
+  if (body.result !== undefined) data.result = body.result || null;
+
   const round = await prisma.svsRound.update({
     where: { id },
-    data: {
-      roundName: body.roundName,
-      eventDate: body.eventDate ? new Date(body.eventDate) : null,
-      opponent: body.opponent || null,
-      status: body.status || null,
-    },
+    data,
   });
 
   return NextResponse.json(round);
