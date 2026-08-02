@@ -375,9 +375,14 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
           p.timeSlots.some((ps) => ps.timeSlotId === t.id)
         );
         const t12Members = inSlot.filter((p) => p.hasT12);
-        const totalShield = t12Members.reduce((sum, p) => sum + (p.t12ShieldSkill ?? 0), 0);
-        const totalSpear = t12Members.reduce((sum, p) => sum + (p.t12SpearSkill ?? 0), 0);
-        const totalBow = t12Members.reduce((sum, p) => sum + (p.t12BowSkill ?? 0), 0);
+        const sumStats = (members: Participant[]) => ({
+          shield: members.reduce((sum, p) => sum + (p.t12ShieldSkill ?? 0), 0),
+          spear: members.reduce((sum, p) => sum + (p.t12SpearSkill ?? 0), 0),
+          bow: members.reduce((sum, p) => sum + (p.t12BowSkill ?? 0), 0),
+        });
+        const totalAll = sumStats(t12Members);
+        const totalVbv = sumStats(t12Members.filter((p) => p.alliance === "vbv"));
+        const totalCbs = sumStats(t12Members.filter((p) => p.alliance === "cbs"));
         const draft = leaderDrafts[t.id] || {
           rallyLeaderId: "",
           rallyLeaderUsePet: false,
@@ -406,8 +411,26 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </button>
             </div>
 
-            <div style={{ color: "#38bdf8", fontSize: "0.9rem", marginBottom: 8 }}>
-              T12合計Lv 盾{totalShield} / 槍{totalSpear} / 弓{totalBow}
+            <div style={{ color: "#38bdf8", fontSize: "0.9rem", marginBottom: 4 }}>
+              T12合計Lv(全体) 盾
+              <span style={{ color: totalAll.shield > 24 ? "#f87171" : "inherit" }}>
+                {totalAll.shield}
+              </span>{" "}
+              / 槍
+              <span style={{ color: totalAll.spear > 24 ? "#f87171" : "inherit" }}>
+                {totalAll.spear}
+              </span>{" "}
+              / 弓
+              <span style={{ color: totalAll.bow > 24 ? "#f87171" : "inherit" }}>
+                {totalAll.bow}
+              </span>{" "}
+              /24
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: 2 }}>
+              vbv: 盾{totalVbv.shield} / 槍{totalVbv.spear} / 弓{totalVbv.bow}
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: 8 }}>
+              cbs: 盾{totalCbs.shield} / 槍{totalCbs.spear} / 弓{totalCbs.bow}
             </div>
 
             <div className="row">
@@ -464,7 +487,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             </div>
 
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-              駐屯メンバー選択(vbv・cbsそれぞれ最大12人)
+              駐屯メンバー選択(vbv・cbsそれぞれ最大12人、合計上限は24)
             </p>
             {(["vbv", "cbs"] as const).map((allianceKey) => {
               const members = inSlot
