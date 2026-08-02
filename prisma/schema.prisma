@@ -69,45 +69,4 @@ model Formation {
   cavalryPct  Int?
   archerPct   Int?
 
-  // 装備などは後で構造化する。まずはJSON文字列で自由記述。
-  equipmentNote String?
-
-  createdAt DateTime @default(now())
-}
-
-// SVS開催回(全体の器)
-model SvsRound {
-  id        Int      @id @default(autoincrement())
-  roundName String   // 例: "SVS 2608"
-  eventDate DateTime?
-  opponent  String?  // 未定の場合は空欄
-  status    String?  // 例: "編成準備中" など自由入力
-  createdAt DateTime @default(now())
-
-  timeSlots    SvsTimeSlot[]
-  participants SvsParticipant[]
-}
-
-// SVS開催回の中の時間帯(例: 21:00〜23:00)
-model SvsTimeSlot {
-  id         Int      @id @default(autoincrement())
-  svsRoundId Int
-  svsRound   SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
-  label      String   // 例: "21:00〜23:00"
-  createdAt  DateTime @default(now())
-}
-
-// SVS開催回への参加者登録
-model SvsParticipant {
-  id             Int      @id @default(autoincrement())
-  svsRoundId     Int
-  svsRound       SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
-  playerName     String
-  availableFrom  String? // 例: "21:00"
-  availableTo    String? // 例: "23:00"
-  hasT12         Boolean  @default(false)
-  t12ShieldSkill Int? // 盾兵スキルレベル 0〜3
-  t12SpearSkill  Int? // 槍兵スキルレベル 0〜3
-  t12BowSkill    Int? // 弓兵スキルレベル 0〜3
-  createdAt      DateTime @default(now())
-}
+  // 装備などは後で
