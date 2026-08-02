@@ -14,6 +14,7 @@ type TimeSlot = {
   garrisonLeaderId: number | null;
   garrisonLeader: LeaderInfo;
   garrisonLeaderUsePet: boolean;
+  garrisonMembers: { participantId: number }[];
 };
 type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
 type Participant = {
@@ -49,6 +50,7 @@ type LeaderDraft = {
   rallyLeaderUsePet: boolean;
   garrisonLeaderId: string;
   garrisonLeaderUsePet: boolean;
+  garrisonMemberIds: number[];
 };
 
 export default function SvsRoundDetailPage({ params }: { params: { id: string } }) {
@@ -81,6 +83,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         rallyLeaderUsePet: t.rallyLeaderUsePet,
         garrisonLeaderId: t.garrisonLeaderId ? String(t.garrisonLeaderId) : "",
         garrisonLeaderUsePet: t.garrisonLeaderUsePet,
+        garrisonMemberIds: t.garrisonMembers.map((g) => g.participantId),
       };
     }
     setLeaderDrafts(drafts);
@@ -159,6 +162,24 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     }));
   }
 
+  function toggleGarrisonMember(slotId: number, participantId: number) {
+    setLeaderDrafts((prev) => {
+      const current = prev[slotId]?.garrisonMemberIds || [];
+      const isSelected = current.includes(participantId);
+      if (!isSelected && current.length >= 12) {
+        alert("駐屯メンバーは最大12人までです。");
+        return prev;
+      }
+      const next = isSelected
+        ? current.filter((id) => id !== participantId)
+        : [...current, participantId];
+      return {
+        ...prev,
+        [slotId]: { ...prev[slotId], garrisonMemberIds: next },
+      };
+    });
+  }
+
   async function saveLeaders(slotId: number) {
     const d = leaderDrafts[slotId];
     await fetch(`/api/svs-time-slots/${slotId}`, {
@@ -169,6 +190,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         rallyLeaderUsePet: d.rallyLeaderUsePet,
         garrisonLeaderId: d.garrisonLeaderId,
         garrisonLeaderUsePet: d.garrisonLeaderUsePet,
+        garrisonMemberIds: d.garrisonMemberIds,
       }),
     });
     await load();
@@ -434,7 +456,25 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                 </label>
               </div>
             </div>
-            <button onClick={() => saveLeaders(t.id)}>リーダー設定を保存</button>
+
+            <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+              駐屯メンバー選択({draft.garrisonMemberIds.length}/12人)
+            </p>
+            {inSlot.map((p) => (
+              <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={draft.garrisonMemberIds.includes(p.id)}
+                  onChange={() => toggleGarrisonMember(t.id, p.id)}
+                  style={{ width: "auto" }}
+                />
+                {p.playerName}
+              </label>
+            ))}
+
+            <button onClick={() => saveLeaders(t.id)} style={{ marginTop: 12 }}>
+              設定を保存
+            </button>
 
             {inSlot.length === 0 && (
               <p style={{ color: "#94a3b8", marginTop: 16 }}>
@@ -495,6 +535,18 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             }}
                           >
                             集結リーダー
+                          </span>
+                        )}
+                        {t.garrisonMembers.some((g) => g.participantId === p.id) && (
+                          <span
+                            style={{
+                              color: "#94a3b8",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            駐屯
                           </span>
                         )}
                         {p.noSleepRisk && (
@@ -581,6 +633,18 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             }}
                           >
                             集結リーダー
+                          </span>
+                        )}
+                        {t.garrisonMembers.some((g) => g.participantId === p.id) && (
+                          <span
+                            style={{
+                              color: "#94a3b8",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            駐屯
                           </span>
                         )}
                         {p.noSleepRisk && (
