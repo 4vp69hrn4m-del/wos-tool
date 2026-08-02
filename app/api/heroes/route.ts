@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
       def: toInt(body.def),
       hp: toInt(body.hp),
       lethality: toInt(body.lethality),
+      skillEffectStat1: body.skillEffectStat1 || null,
+      skillEffectValue1: toInt(body.skillEffectValue1),
+      skillEffectStat2: body.skillEffectStat2 || null,
+      skillEffectValue2: toInt(body.skillEffectValue2),
+      skills: body.skills || null,
       notes: body.notes || null,
     },
   });
