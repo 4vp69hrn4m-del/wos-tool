@@ -14,11 +14,19 @@ datasource db {
 model Hero {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  troopType String // "歩兵"(盾) / "騎兵"(槍) / "弓兵"(弓)
+  troopType String // "歩兵"(盾) / "騎兵"(槍) / "弓兵"(弓) のいずれか
   atk       Int?
   def       Int?
   hp        Int?
   lethality Int?
+
+  // 主要スキル効果(計算に使う数値。最大2つまで)
+  skillEffectStat1  String? // "atk" / "def" / "hp" / "lethality"
+  skillEffectValue1 Int?    // パーセント(例: 30 なら +30%)
+  skillEffectStat2  String?
+  skillEffectValue2 Int?
+
+  skills    String? // スキル名・効果の自由メモ(計算には使わない参考情報)
   notes     String?
   createdAt DateTime @default(now())
 }
@@ -40,24 +48,26 @@ model Pet {
   createdAt DateTime @default(now())
 }
 
-// 編成
+// 編成(自分の編成・相手の編成、どちらもこのテーブルに保存する)
 model Formation {
   id        Int      @id @default(autoincrement())
-  label     String?
-  side      String // self or opponent
-  formationType String? // attack or defense
+  label     String? // 「対〇〇同盟用」などメモ用の名前
+  side      String // "self" or "opponent"
+  formationType String? // "attack" or "defense"
 
-  shieldHeroName String? // 盾英雄
-  spearHeroName  String? // 槍英雄
-  bowHeroName    String? // 弓英雄
+  shieldHeroName String? // 盾英雄(歩兵)
+  spearHeroName  String? // 槍英雄(騎兵)
+  bowHeroName    String? // 弓英雄(弓兵)
 
   expertName String?
   petName    String?
 
+  // 兵種割合 (%)
   infantryPct Int?
   cavalryPct  Int?
   archerPct   Int?
 
+  // 装備などは後で構造化する。まずはJSON文字列で自由記述。
   equipmentNote String?
 
   createdAt DateTime @default(now())
