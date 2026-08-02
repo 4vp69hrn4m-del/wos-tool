@@ -9,7 +9,9 @@ export async function GET(
   const round = await prisma.svsRound.findUnique({
     where: { id },
     include: {
-      timeSlots: true,
+      timeSlots: {
+        include: { rallyLeader: true, garrisonLeader: true },
+      },
       participants: {
         include: { timeSlots: { include: { timeSlot: true } } },
       },
