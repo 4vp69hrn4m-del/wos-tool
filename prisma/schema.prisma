@@ -1,88 +1,64 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+// このファイルはDB(PostgreSQL)のテーブル設計です。
+// Railwayの環境変数 DATABASE_URL を読みに行きます。
 
-const prisma = new PrismaClient();
-
-// 編成保存
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    const formation = await prisma.formation.create({
-      data: {
-        label: body.label || null,
-
-        // self = 自分 / opponent = 相手
-        side: body.side || "self",
-
-        // attack / defense
-        formationType: body.formationType || null,
-
-        // 英雄
-        shieldHeroName: body.shieldHeroName || body.hero1Name || null,
-        spearHeroName: body.spearHeroName || body.hero2Name || null,
-        bowHeroName: body.bowHeroName || body.hero3Name || null,
-
-        // 専門家・ペット
-        expertName: body.expertName || null,
-        petName: body.petName || null,
-
-        // 兵種割合
-        infantryPct: body.infantryPct ?? null,
-        cavalryPct: body.cavalryPct ?? null,
-        archerPct: body.archerPct ?? null,
-
-        // 装備メモ
-        equipmentNote: body.equipmentNote || null,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      formation,
-    });
-
-  } catch (error) {
-    console.error("Formation create error:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "編成保存に失敗しました",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+generator client {
+  provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-// 編成一覧取得
-export async function GET() {
-  try {
-    const formations = await prisma.formation.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+// マスターデータ: 英雄
+model Hero {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  troopType String // "歩兵"(盾) / "騎兵"(槍) / "弓兵"(弓)
+  atk       Int?
+  def       Int?
+  hp        Int?
+  lethality Int?
+  notes     String?
+  createdAt DateTime @default(now())
+}
 
-    return NextResponse.json({
-      success: true,
-      formations,
-    });
+// マスターデータ: 専門家
+model Expert {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  notes     String?
+  createdAt DateTime @default(now())
+}
 
-  } catch (error) {
-    console.error("Formation fetch error:", error);
+// マスターデータ: ペット
+model Pet {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  skill     String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "編成取得に失敗しました",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+// 編成
+model Formation {
+  id        Int      @id @default(autoincrement())
+  label     String?
+  side      String // self or opponent
+  formationType String? // attack or defense
+
+  shieldHeroName String? // 盾英雄
+  spearHeroName  String? // 槍英雄
+  bowHeroName    String? // 弓英雄
+
+  expertName String?
+  petName    String?
+
+  infantryPct Int?
+  cavalryPct  Int?
+  archerPct   Int?
+
+  equipmentNote String?
+
+  createdAt DateTime @default(now())
 }
