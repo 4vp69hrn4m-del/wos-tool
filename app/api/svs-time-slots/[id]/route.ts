@@ -46,4 +46,5 @@ export async function DELETE(
 ) {
   const id = Number(params.id);
   await prisma.svsTimeSlot.delete({ where: { id } });
-  return NextRespon
+  return NextResponse.json({ success: true });
+}
