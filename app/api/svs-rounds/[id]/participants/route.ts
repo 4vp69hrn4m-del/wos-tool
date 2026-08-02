@@ -26,6 +26,7 @@ export async function POST(
     data: {
       svsRoundId,
       playerName: body.playerName,
+      homeAlliance: body.homeAlliance || null,
       alliance: body.alliance || null,
       hasT12: !!body.hasT12,
       t12ShieldSkill: toInt(body.t12ShieldSkill),
