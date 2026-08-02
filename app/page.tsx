@@ -49,10 +49,10 @@ export default function Home() {
       <div className="card">
         <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
         <p>
-          <Link href="/formations">→ 編成を登録する / 一覧を見る</Link>
+          <Link href="/formations">→ 編成を登録する / 一覧を見る(作成中)</Link>
         </p>
         <p>
-          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理</Link>
+          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理(作成中)</Link>
         </p>
         <p>
           <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
