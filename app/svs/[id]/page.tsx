@@ -170,6 +170,10 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     (l) => !round.timeSlots.some((t) => t.label === l)
   );
 
+  const sortedTimeSlots = [...round.timeSlots].sort(
+    (a, b) => presetLabels.indexOf(a.label) - presetLabels.indexOf(b.label)
+  );
+
   return (
     <div>
       <p>
@@ -227,7 +231,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             先に上で時間帯を追加してください。
           </p>
         )}
-        {round.timeSlots.map((t) => (
+        {sortedTimeSlots.map((t) => (
           <label key={t.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
@@ -303,7 +307,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
       <h1>時間帯ごとの参加者・リーダー設定</h1>
       {round.timeSlots.length === 0 && <p>まだ時間帯がありません。</p>}
-      {round.timeSlots.map((t) => {
+      {sortedTimeSlots.map((t) => {
         const inSlot = round.participants.filter((p) =>
           p.timeSlots.some((ps) => ps.timeSlotId === t.id)
         );
