@@ -18,16 +18,22 @@ export async function POST(
     return Number.isNaN(n) ? null : n;
   };
 
+  const timeSlotIds: number[] = Array.isArray(body.timeSlotIds)
+    ? body.timeSlotIds.map((v: unknown) => Number(v)).filter((n: number) => !Number.isNaN(n))
+    : [];
+
   const participant = await prisma.svsParticipant.create({
     data: {
       svsRoundId,
       playerName: body.playerName,
-      availableFrom: body.availableFrom || null,
-      availableTo: body.availableTo || null,
       hasT12: !!body.hasT12,
       t12ShieldSkill: toInt(body.t12ShieldSkill),
       t12SpearSkill: toInt(body.t12SpearSkill),
       t12BowSkill: toInt(body.t12BowSkill),
+      noSleepRisk: !!body.noSleepRisk,
+      timeSlots: {
+        create: timeSlotIds.map((timeSlotId) => ({ timeSlotId })),
+      },
     },
   });
 
