@@ -10,8 +10,10 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
+  skillEffectTarget1: string | null;
   skillEffectStat1: string | null;
   skillEffectValue1: number | null;
+  skillEffectTarget2: string | null;
   skillEffectStat2: string | null;
   skillEffectValue2: number | null;
   skills: string | null;
@@ -32,6 +34,17 @@ const statLabel: Record<string, string> = {
   lethality: "殺傷力",
 };
 
+function describeEffect(
+  target: string | null,
+  stat: string | null,
+  value: number | null
+) {
+  if (!target || !stat || value === null) return null;
+  const targetLabel = target === "self" ? "自分" : "敵";
+  const sign = target === "self" ? "+" : "-";
+  return `${targetLabel}の${statLabel[stat]}${sign}${value}%`;
+}
+
 export default function MasterPage() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [experts, setExperts] = useState<Expert[]>([]);
@@ -43,8 +56,10 @@ export default function MasterPage() {
   const [heroDef, setHeroDef] = useState("");
   const [heroHp, setHeroHp] = useState("");
   const [heroLethality, setHeroLethality] = useState("");
+  const [skillEffectTarget1, setSkillEffectTarget1] = useState("");
   const [skillEffectStat1, setSkillEffectStat1] = useState("");
   const [skillEffectValue1, setSkillEffectValue1] = useState("");
+  const [skillEffectTarget2, setSkillEffectTarget2] = useState("");
   const [skillEffectStat2, setSkillEffectStat2] = useState("");
   const [skillEffectValue2, setSkillEffectValue2] = useState("");
   const [heroSkills, setHeroSkills] = useState("");
@@ -80,8 +95,10 @@ export default function MasterPage() {
         def: heroDef,
         hp: heroHp,
         lethality: heroLethality,
+        skillEffectTarget1,
         skillEffectStat1,
         skillEffectValue1,
+        skillEffectTarget2,
         skillEffectStat2,
         skillEffectValue2,
         skills: heroSkills,
@@ -92,8 +109,10 @@ export default function MasterPage() {
     setHeroDef("");
     setHeroHp("");
     setHeroLethality("");
+    setSkillEffectTarget1("");
     setSkillEffectStat1("");
     setSkillEffectValue1("");
+    setSkillEffectTarget2("");
     setSkillEffectStat2("");
     setSkillEffectValue2("");
     setHeroSkills("");
@@ -164,12 +183,22 @@ export default function MasterPage() {
         </div>
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 0 }}>
-          主要スキル効果(計算に使う数値・最大2つ)
+          主要スキル効果1(計算に使う数値・任意)
         </p>
-
         <div className="row">
           <div>
-            <label>効果1の対象</label>
+            <label>対象</label>
+            <select
+              value={skillEffectTarget1}
+              onChange={(e) => setSkillEffectTarget1(e.target.value)}
+            >
+              <option value="">(なし)</option>
+              <option value="self">自分(上昇)</option>
+              <option value="enemy">敵(下降)</option>
+            </select>
+          </div>
+          <div>
+            <label>ステータス</label>
             <select
               value={skillEffectStat1}
               onChange={(e) => setSkillEffectStat1(e.target.value)}
@@ -182,7 +211,7 @@ export default function MasterPage() {
             </select>
           </div>
           <div>
-            <label>効果1の値(%)</label>
+            <label>値(%)</label>
             <input
               value={skillEffectValue1}
               onChange={(e) => setSkillEffectValue1(e.target.value)}
@@ -191,9 +220,23 @@ export default function MasterPage() {
           </div>
         </div>
 
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 0 }}>
+          主要スキル効果2(計算に使う数値・任意)
+        </p>
         <div className="row">
           <div>
-            <label>効果2の対象</label>
+            <label>対象</label>
+            <select
+              value={skillEffectTarget2}
+              onChange={(e) => setSkillEffectTarget2(e.target.value)}
+            >
+              <option value="">(なし)</option>
+              <option value="self">自分(上昇)</option>
+              <option value="enemy">敵(下降)</option>
+            </select>
+          </div>
+          <div>
+            <label>ステータス</label>
             <select
               value={skillEffectStat2}
               onChange={(e) => setSkillEffectStat2(e.target.value)}
@@ -206,7 +249,7 @@ export default function MasterPage() {
             </select>
           </div>
           <div>
-            <label>効果2の値(%)</label>
+            <label>値(%)</label>
             <input
               value={skillEffectValue2}
               onChange={(e) => setSkillEffectValue2(e.target.value)}
@@ -234,28 +277,31 @@ export default function MasterPage() {
         <button onClick={addHero}>英雄を追加</button>
 
         <div style={{ marginTop: 16 }}>
-          {heroes.map((h) => (
-            <div key={h.id} style={{ marginBottom: 8 }}>
-              ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}) 攻{h.atk ?? "-"} / 防
-              {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
-              {h.skillEffectStat1 && (
-                <span>
-                  {" "}
-                  / スキル効果: {statLabel[h.skillEffectStat1]}+{h.skillEffectValue1}%
-                </span>
-              )}
-              {h.skillEffectStat2 && (
-                <span>
-                  、{statLabel[h.skillEffectStat2]}+{h.skillEffectValue2}%
-                </span>
-              )}
-              {h.skills && (
-                <div style={{ color: "#94a3b8", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                  {h.skills}
-                </div>
-              )}
-            </div>
-          ))}
+          {heroes.map((h) => {
+            const eff1 = describeEffect(
+              h.skillEffectTarget1,
+              h.skillEffectStat1,
+              h.skillEffectValue1
+            );
+            const eff2 = describeEffect(
+              h.skillEffectTarget2,
+              h.skillEffectStat2,
+              h.skillEffectValue2
+            );
+            return (
+              <div key={h.id} style={{ marginBottom: 8 }}>
+                ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}) 攻{h.atk ?? "-"} / 防
+                {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
+                {eff1 && <span> / スキル効果: {eff1}</span>}
+                {eff2 && <span>、{eff2}</span>}
+                {h.skills && (
+                  <div style={{ color: "#94a3b8", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
+                    {h.skills}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
