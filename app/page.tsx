@@ -12,6 +12,9 @@ export default function Home() {
         <p>
           <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理</Link>
         </p>
+        <p>
+          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
+        </p>
       </div>
     </div>
   );
