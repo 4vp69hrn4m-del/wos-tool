@@ -436,6 +436,30 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                     >
                       <div>
                         <strong>{p.playerName}</strong>
+                        {p.id === t.garrisonLeaderId && (
+                          <span
+                            style={{
+                              color: "#38bdf8",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            駐屯リーダー
+                          </span>
+                        )}
+                        {p.id === t.rallyLeaderId && (
+                          <span
+                            style={{
+                              color: "#f87171",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            集結リーダー
+                          </span>
+                        )}
                         {p.noSleepRisk && (
                           <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}>
                             {" "}
@@ -497,6 +521,30 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                     >
                       <div>
                         <strong>{p.playerName}</strong>
+                        {p.id === t.garrisonLeaderId && (
+                          <span
+                            style={{
+                              color: "#38bdf8",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            駐屯リーダー
+                          </span>
+                        )}
+                        {p.id === t.rallyLeaderId && (
+                          <span
+                            style={{
+                              color: "#f87171",
+                              fontSize: "0.75rem",
+                              marginLeft: 6,
+                              fontWeight: 600,
+                            }}
+                          >
+                            集結リーダー
+                          </span>
+                        )}
                         {p.noSleepRisk && (
                           <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}>
                             {" "}
