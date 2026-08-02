@@ -1,41 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(
+export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const svsRoundId = Number(params.id);
-  const body = await req.json();
-
-  if (!body.playerName) {
-    return NextResponse.json({ error: "playerName is required" }, { status: 400 });
-  }
-
-  const toInt = (v: unknown) => {
-    if (v === "" || v === null || v === undefined) return null;
-    const n = Number(v);
-    return Number.isNaN(n) ? null : n;
-  };
-
-  const timeSlotIds: number[] = Array.isArray(body.timeSlotIds)
-    ? body.timeSlotIds.map((v: unknown) => Number(v)).filter((n: number) => !Number.isNaN(n))
-    : [];
-
-  const participant = await prisma.svsParticipant.create({
-    data: {
-      svsRoundId,
-      playerName: body.playerName,
-      hasT12: !!body.hasT12,
-      t12ShieldSkill: toInt(body.t12ShieldSkill),
-      t12SpearSkill: toInt(body.t12SpearSkill),
-      t12BowSkill: toInt(body.t12BowSkill),
-      noSleepRisk: !!body.noSleepRisk,
-      timeSlots: {
-        create: timeSlotIds.map((timeSlotId) => ({ timeSlotId })),
+  const id = Number(params.id);
+  const round = await prisma.svsRound.findUnique({
+    where: { id },
+    include: {
+      timeSlots: true,
+      participants: {
+        include: { timeSlots: { include: { timeSlot: true } } },
       },
     },
   });
+  if (!round) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+  return NextResponse.json(round);
+}
 
-  return NextResponse.json(participant);
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const id = Number(params.id);
+  const body = await req.json();
+
+  const round = await prisma.svsRound.update({
+    where: { id },
+    data: {
+      roundName: body.roundName,
+      eventDate: body.eventDate ? new Date(body.eventDate) : null,
+      opponent: body.opponent || null,
+      status: body.status || null,
+    },
+  });
+
+  return NextResponse.json(round);
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const id = Number(params.id);
+  await prisma.svsRound.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 }
