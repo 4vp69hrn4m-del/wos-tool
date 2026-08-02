@@ -74,3 +74,24 @@ model Formation {
 
   createdAt DateTime @default(now())
 }
+
+// SVS開催回(全体の器)
+model SvsRound {
+  id        Int      @id @default(autoincrement())
+  roundName String   // 例: "SVS 2608"
+  eventDate DateTime?
+  opponent  String?  // 未定の場合は空欄
+  status    String?  // 例: "編成準備中" など自由入力
+  createdAt DateTime @default(now())
+
+  timeSlots SvsTimeSlot[]
+}
+
+// SVS開催回の中の時間帯(例: 21:00〜23:00)
+model SvsTimeSlot {
+  id         Int      @id @default(autoincrement())
+  svsRoundId Int
+  svsRound   SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
+  label      String   // 例: "21:00〜23:00"
+  createdAt  DateTime @default(now())
+}
