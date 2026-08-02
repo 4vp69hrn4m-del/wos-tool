@@ -96,6 +96,13 @@ model SvsTimeSlot {
   label      String   // 例: "21:00〜23:00"
   createdAt  DateTime @default(now())
 
+  rallyLeaderId        Int?
+  rallyLeader          SvsParticipant? @relation("RallyLeader", fields: [rallyLeaderId], references: [id])
+  rallyLeaderUsePet    Boolean         @default(false)
+  garrisonLeaderId     Int?
+  garrisonLeader       SvsParticipant? @relation("GarrisonLeader", fields: [garrisonLeaderId], references: [id])
+  garrisonLeaderUsePet Boolean         @default(false)
+
   participantSlots SvsParticipantTimeSlot[]
 }
 
@@ -105,6 +112,7 @@ model SvsParticipant {
   svsRoundId     Int
   svsRound       SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
   playerName     String
+  alliance       String? // "vbv" or "cbs"
   hasT12         Boolean  @default(false)
   t12ShieldSkill Int? // 盾兵スキルレベル 0〜3
   t12SpearSkill  Int? // 槍兵スキルレベル 0〜3
@@ -112,7 +120,9 @@ model SvsParticipant {
   noSleepRisk    Boolean  @default(false) // 寝落ちは考慮しないものとする
   createdAt      DateTime @default(now())
 
-  timeSlots SvsParticipantTimeSlot[]
+  timeSlots         SvsParticipantTimeSlot[]
+  rallyLeaderFor    SvsTimeSlot[] @relation("RallyLeader")
+  garrisonLeaderFor SvsTimeSlot[] @relation("GarrisonLeader")
 }
 
 // 参加者 と 参加可能な時間帯 の中間テーブル(多対多)
