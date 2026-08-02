@@ -94,7 +94,17 @@ export default function SvsListPage() {
               {r.opponent || "未定"}
             </div>
             <div>状態: {r.status || "-"}</div>
-            <div>時間帯: {r.timeSlots.map((t) => t.label).join(" / ") || "未設定"}</div>
+            <div>
+              時間帯:{" "}
+              {[...r.timeSlots]
+                .sort(
+                  (a, b) =>
+                    ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"].indexOf(a.label) -
+                    ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"].indexOf(b.label)
+                )
+                .map((t) => t.label)
+                .join(" / ") || "未設定"}
+            </div>
             <div style={{ marginTop: 8 }}>
               <Link href={`/svs/${r.id}`}>→ 時間帯を管理する</Link>
             </div>
