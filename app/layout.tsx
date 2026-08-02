@@ -14,6 +14,18 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <main>{children}</main>
+        <div
+          style={{
+            position: "fixed",
+            bottom: 8,
+            right: 12,
+            fontSize: "0.75rem",
+            color: "#64748b",
+            pointerEvents: "none",
+          }}
+        >
+          create by ななぽこ
+        </div>
       </body>
     </html>
   );
