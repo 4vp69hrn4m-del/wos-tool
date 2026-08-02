@@ -20,13 +20,16 @@ model Hero {
   hp        Int?
   lethality Int?
 
-  // 主要スキル効果(計算に使う数値。最大2つまで)
+  // 主要スキル効果(計算に使う数値。最大3つまで)
   skillEffectTarget1 String? // "self"(自分の兵種が上昇) / "enemy"(敵の兵種が下降)
   skillEffectStat1   String? // "atk" / "def" / "hp" / "lethality"
   skillEffectValue1  Int?    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
   skillEffectTarget2 String?
   skillEffectStat2   String?
   skillEffectValue2  Int?
+  skillEffectTarget3 String?
+  skillEffectStat3   String?
+  skillEffectValue3  Int?
 
   skills    String? // スキル名・効果の自由メモ(計算には使わない参考情報)
   notes     String?
@@ -114,7 +117,8 @@ model SvsParticipant {
   svsRoundId     Int
   svsRound       SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
   playerName     String
-  alliance       String? // "vbv" or "cbs"
+  homeAlliance   String? // 所属同盟(実際に入っている同盟名・自由入力)
+  alliance       String? // 参加希望同盟 "vbv" or "cbs"
   hasT12         Boolean  @default(false)
   t12ShieldSkill Int? // 盾兵スキルレベル 0〜3
   t12SpearSkill  Int? // 槍兵スキルレベル 0〜3
