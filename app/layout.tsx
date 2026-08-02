@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "WOS編成分析ツール",
-  description: "ホワイトアウト・サバイバル 対人戦編成分析(同盟内専用)",
+  description: "ホワイトアウト・サバイバル 対人戦編成分析(vbv.cbs.ONK専用)",
 };
 
 export default function RootLayout({
