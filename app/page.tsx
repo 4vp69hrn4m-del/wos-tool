@@ -70,9 +70,15 @@ export default function Home() {
           {[...latestRound.timeSlots]
             .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
             .map((t) => {
-              const inSlot = latestRound.participants.filter((p) =>
-                p.timeSlots.some((ps) => ps.timeSlotId === t.id)
-              );
+              const inSlot = latestRound.participants
+                .filter((p) => p.timeSlots.some((ps) => ps.timeSlotId === t.id))
+                .sort(
+                  (a, b) =>
+                    (b.t12ShieldSkill ?? 0) +
+                    (b.t12SpearSkill ?? 0) +
+                    (b.t12BowSkill ?? 0) -
+                    ((a.t12ShieldSkill ?? 0) + (a.t12SpearSkill ?? 0) + (a.t12BowSkill ?? 0))
+                );
               return (
                 <div className="card" key={t.id}>
                   <strong>
