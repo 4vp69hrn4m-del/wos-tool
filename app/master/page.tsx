@@ -2,9 +2,23 @@
 
 import { useEffect, useState } from "react";
 
-type Hero = { id: number; name: string; troopType: string | null };
+type Hero = {
+  id: number;
+  name: string;
+  troopType: string;
+  atk: number | null;
+  def: number | null;
+  hp: number | null;
+  lethality: number | null;
+};
 type Expert = { id: number; name: string };
 type Pet = { id: number; name: string; skill: string | null };
+
+const troopTypeLabel: Record<string, string> = {
+  歩兵: "歩兵(盾)",
+  騎兵: "騎兵(槍)",
+  弓兵: "弓兵(弓)",
+};
 
 export default function MasterPage() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
@@ -12,7 +26,12 @@ export default function MasterPage() {
   const [pets, setPets] = useState<Pet[]>([]);
 
   const [heroName, setHeroName] = useState("");
-  const [heroTroopType, setHeroTroopType] = useState("");
+  const [heroTroopType, setHeroTroopType] = useState("歩兵");
+  const [heroAtk, setHeroAtk] = useState("");
+  const [heroDef, setHeroDef] = useState("");
+  const [heroHp, setHeroHp] = useState("");
+  const [heroLethality, setHeroLethality] = useState("");
+
   const [expertName, setExpertName] = useState("");
   const [petName, setPetName] = useState("");
   const [petSkill, setPetSkill] = useState("");
@@ -37,10 +56,20 @@ export default function MasterPage() {
     await fetch("/api/heroes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: heroName, troopType: heroTroopType }),
+      body: JSON.stringify({
+        name: heroName,
+        troopType: heroTroopType,
+        atk: heroAtk,
+        def: heroDef,
+        hp: heroHp,
+        lethality: heroLethality,
+      }),
     });
     setHeroName("");
-    setHeroTroopType("");
+    setHeroAtk("");
+    setHeroDef("");
+    setHeroHp("");
+    setHeroLethality("");
     await loadAll();
   }
 
@@ -78,14 +107,42 @@ export default function MasterPage() {
         <h2 style={{ marginTop: 0 }}>英雄</h2>
         <label>英雄名</label>
         <input value={heroName} onChange={(e) => setHeroName(e.target.value)} />
-        <label>兵種(歩兵/騎兵/弓兵など・任意)</label>
-        <input value={heroTroopType} onChange={(e) => setHeroTroopType(e.target.value)} />
+
+        <label>兵種</label>
+        <select value={heroTroopType} onChange={(e) => setHeroTroopType(e.target.value)}>
+          <option value="歩兵">歩兵(盾)</option>
+          <option value="騎兵">騎兵(槍)</option>
+          <option value="弓兵">弓兵(弓)</option>
+        </select>
+
+        <div className="row">
+          <div>
+            <label>攻撃力</label>
+            <input value={heroAtk} onChange={(e) => setHeroAtk(e.target.value)} />
+          </div>
+          <div>
+            <label>防御力</label>
+            <input value={heroDef} onChange={(e) => setHeroDef(e.target.value)} />
+          </div>
+        </div>
+        <div className="row">
+          <div>
+            <label>体力(HP)</label>
+            <input value={heroHp} onChange={(e) => setHeroHp(e.target.value)} />
+          </div>
+          <div>
+            <label>殺傷力</label>
+            <input value={heroLethality} onChange={(e) => setHeroLethality(e.target.value)} />
+          </div>
+        </div>
+
         <button onClick={addHero}>英雄を追加</button>
 
         <div style={{ marginTop: 16 }}>
           {heroes.map((h) => (
             <div key={h.id}>
-              ・{h.name} {h.troopType ? `(${h.troopType})` : ""}
+              ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}) 攻{h.atk ?? "-"} / 防
+              {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
             </div>
           ))}
         </div>
@@ -114,12 +171,4 @@ export default function MasterPage() {
 
         <div style={{ marginTop: 16 }}>
           {pets.map((p) => (
-            <div key={p.id}>
-              ・{p.name} {p.skill ? `(${p.skill})` : ""}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+            
