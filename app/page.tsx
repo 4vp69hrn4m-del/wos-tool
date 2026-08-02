@@ -144,27 +144,44 @@ export default function Home() {
                     </p>
                   )}
 
-                  {vbvMembers.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
-                        vbv({vbvMembers.length}人)
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      columnGap: 12,
+                      marginTop: 8,
+                    }}
+                  >
+                    {vbvMembers.length > 0 && (
+                      <div>
+                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                          vbv({vbvMembers.length}人)
+                        </div>
+                        {vbvMembers.map((p) => (
+                          <ParticipantLine
+                            p={p}
+                            key={p.id}
+                            isLeader={p.id === t.garrisonLeaderId}
+                          />
+                        ))}
                       </div>
-                      {vbvMembers.map((p) => (
-                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
-                      ))}
-                    </div>
-                  )}
+                    )}
 
-                  {cbsMembers.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
-                        cbs({cbsMembers.length}人)
+                    {cbsMembers.length > 0 && (
+                      <div>
+                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                          cbs({cbsMembers.length}人)
+                        </div>
+                        {cbsMembers.map((p) => (
+                          <ParticipantLine
+                            p={p}
+                            key={p.id}
+                            isLeader={p.id === t.garrisonLeaderId}
+                          />
+                        ))}
                       </div>
-                      {cbsMembers.map((p) => (
-                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
-                      ))}
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   {otherMembers.length > 0 && (
                     <div style={{ marginTop: 8 }}>
