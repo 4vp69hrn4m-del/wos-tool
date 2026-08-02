@@ -406,50 +406,128 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                 まだこの時間帯の参加者がいません。
               </p>
             )}
-            {inSlot.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  borderTop: "1px solid #334155",
-                  paddingTop: 8,
-                  marginTop: 16,
-                }}
-              >
-                <div>
-                  <strong>{p.playerName}</strong>
-                  <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                    {" "}
-                    ({p.alliance || "-"})
-                  </span>
-                  {p.noSleepRisk && (
-                    <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}> 寝落ちなし</span>
-                  )}
-                  <div>
-                    T12:{" "}
-                    {p.hasT12
-                      ? `盾${p.t12ShieldSkill ?? "-"} / 槍${p.t12SpearSkill ?? "-"} / 弓${
-                          p.t12BowSkill ?? "-"
-                        }`
-                      : "なし"}
+
+            {(["vbv", "cbs"] as const).map((allianceKey) => {
+              const members = inSlot.filter((p) => p.alliance === allianceKey);
+              if (members.length === 0) return null;
+              return (
+                <div key={allianceKey} style={{ marginTop: 16 }}>
+                  <div
+                    style={{
+                      color: "#38bdf8",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {allianceKey}({members.length}人)
                   </div>
+                  {members.map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        borderTop: "1px solid #334155",
+                        paddingTop: 8,
+                        marginTop: 8,
+                      }}
+                    >
+                      <div>
+                        <strong>{p.playerName}</strong>
+                        {p.noSleepRisk && (
+                          <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}>
+                            {" "}
+                            寝落ちなし
+                          </span>
+                        )}
+                        <div>
+                          T12:{" "}
+                          {p.hasT12
+                            ? `盾${p.t12ShieldSkill ?? "-"} / 槍${p.t12SpearSkill ?? "-"} / 弓${
+                                p.t12BowSkill ?? "-"
+                              }`
+                            : "なし"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteParticipant(p.id, p.playerName)}
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "0.8rem",
+                          background: "#7f1d1d",
+                          color: "#fecaca",
+                          flexShrink: 0,
+                        }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => deleteParticipant(p.id, p.playerName)}
+              );
+            })}
+
+            {inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs").length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                <div
                   style={{
-                    padding: "4px 10px",
-                    fontSize: "0.8rem",
-                    background: "#7f1d1d",
-                    color: "#fecaca",
-                    flexShrink: 0,
+                    color: "#94a3b8",
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    marginBottom: 4,
                   }}
                 >
-                  削除
-                </button>
+                  未設定
+                </div>
+                {inSlot
+                  .filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs")
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        borderTop: "1px solid #334155",
+                        paddingTop: 8,
+                        marginTop: 8,
+                      }}
+                    >
+                      <div>
+                        <strong>{p.playerName}</strong>
+                        {p.noSleepRisk && (
+                          <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}>
+                            {" "}
+                            寝落ちなし
+                          </span>
+                        )}
+                        <div>
+                          T12:{" "}
+                          {p.hasT12
+                            ? `盾${p.t12ShieldSkill ?? "-"} / 槍${p.t12SpearSkill ?? "-"} / 弓${
+                                p.t12BowSkill ?? "-"
+                              }`
+                            : "なし"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteParticipant(p.id, p.playerName)}
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "0.8rem",
+                          background: "#7f1d1d",
+                          color: "#fecaca",
+                          flexShrink: 0,
+                        }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
               </div>
-            ))}
+            )}
           </div>
         );
       })}
