@@ -1,3 +1,4 @@
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata = {
@@ -13,6 +14,20 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
+        <div
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            background: "#0f172a",
+            borderBottom: "1px solid #334155",
+            padding: "10px 16px",
+          }}
+        >
+          <Link href="/" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
+            🏠 ホームに戻る
+          </Link>
+        </div>
         <main>{children}</main>
         <div
           style={{
@@ -30,4 +45,3 @@ export default function RootLayout({
     </html>
   );
 }
-
