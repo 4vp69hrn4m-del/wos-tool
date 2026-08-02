@@ -3,11 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type TimeSlot = { id: number; label: string };
-type ParticipantSlot = { timeSlotId: number; timeSlot: TimeSlot };
+type LeaderInfo = { id: number; playerName: string } | null;
+
+type TimeSlot = {
+  id: number;
+  label: string;
+  rallyLeaderId: number | null;
+  rallyLeader: LeaderInfo;
+  rallyLeaderUsePet: boolean;
+  garrisonLeaderId: number | null;
+  garrisonLeader: LeaderInfo;
+  garrisonLeaderUsePet: boolean;
+};
+type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
 type Participant = {
   id: number;
   playerName: string;
+  alliance: string | null;
   hasT12: boolean;
   t12ShieldSkill: number | null;
   t12SpearSkill: number | null;
@@ -25,11 +37,21 @@ type SvsRound = {
   participants: Participant[];
 };
 
+const presetLabels = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
+
+type LeaderDraft = {
+  rallyLeaderId: string;
+  rallyLeaderUsePet: boolean;
+  garrisonLeaderId: string;
+  garrisonLeaderUsePet: boolean;
+};
+
 export default function SvsRoundDetailPage({ params }: { params: { id: string } }) {
   const [round, setRound] = useState<SvsRound | null>(null);
-  const [label, setLabel] = useState("");
+  const [checkedPresets, setCheckedPresets] = useState<string[]>([]);
 
   const [playerName, setPlayerName] = useState("");
+  const [alliance, setAlliance] = useState("vbv");
   const [selectedSlotIds, setSelectedSlotIds] = useState<number[]>([]);
   const [hasT12, setHasT12] = useState(false);
   const [noSleepRisk, setNoSleepRisk] = useState(false);
@@ -37,23 +59,42 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
   const [t12SpearSkill, setT12SpearSkill] = useState("");
   const [t12BowSkill, setT12BowSkill] = useState("");
 
+  const [leaderDrafts, setLeaderDrafts] = useState<Record<number, LeaderDraft>>({});
+
   async function load() {
     const data = await fetch(`/api/svs-rounds/${params.id}`).then((r) => r.json());
     setRound(data);
+    const drafts: Record<number, LeaderDraft> = {};
+    for (const t of data.timeSlots as TimeSlot[]) {
+      drafts[t.id] = {
+        rallyLeaderId: t.rallyLeaderId ? String(t.rallyLeaderId) : "",
+        rallyLeaderUsePet: t.rallyLeaderUsePet,
+        garrisonLeaderId: t.garrisonLeaderId ? String(t.garrisonLeaderId) : "",
+        garrisonLeaderUsePet: t.garrisonLeaderUsePet,
+      };
+    }
+    setLeaderDrafts(drafts);
   }
 
   useEffect(() => {
     load();
   }, []);
 
-  async function addTimeSlot() {
-    if (!label.trim()) return;
-    await fetch(`/api/svs-rounds/${params.id}/time-slots`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label }),
-    });
-    setLabel("");
+  function togglePreset(l: string) {
+    setCheckedPresets((prev) =>
+      prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]
+    );
+  }
+
+  async function addTimeSlots() {
+    for (const l of checkedPresets) {
+      await fetch(`/api/svs-rounds/${params.id}/time-slots`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: l }),
+      });
+    }
+    setCheckedPresets([]);
     await load();
   }
 
@@ -76,6 +117,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         playerName,
+        alliance,
         hasT12,
         t12ShieldSkill: hasT12 ? t12ShieldSkill : "",
         t12SpearSkill: hasT12 ? t12SpearSkill : "",
@@ -100,7 +142,33 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     await load();
   }
 
+  function updateDraft(slotId: number, patch: Partial<LeaderDraft>) {
+    setLeaderDrafts((prev) => ({
+      ...prev,
+      [slotId]: { ...prev[slotId], ...patch },
+    }));
+  }
+
+  async function saveLeaders(slotId: number) {
+    const d = leaderDrafts[slotId];
+    await fetch(`/api/svs-time-slots/${slotId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rallyLeaderId: d.rallyLeaderId,
+        rallyLeaderUsePet: d.rallyLeaderUsePet,
+        garrisonLeaderId: d.garrisonLeaderId,
+        garrisonLeaderUsePet: d.garrisonLeaderUsePet,
+      }),
+    });
+    await load();
+  }
+
   if (!round) return <div>読み込み中...</div>;
+
+  const availablePresets = presetLabels.filter(
+    (l) => !round.timeSlots.some((t) => t.label === l)
+  );
 
   return (
     <div>
@@ -116,38 +184,40 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>時間帯を追加</h2>
-        <label>時間帯(例: 21:00〜23:00)</label>
-        <input value={label} onChange={(e) => setLabel(e.target.value)} />
-        <button onClick={addTimeSlot}>時間帯を追加</button>
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 0 }}>
+          複数選んでまとめて追加できます。
+        </p>
+        {availablePresets.length === 0 && (
+          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+            3種類とも追加済みです。
+          </p>
+        )}
+        {availablePresets.map((l) => (
+          <label key={l} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={checkedPresets.includes(l)}
+              onChange={() => togglePreset(l)}
+              style={{ width: "auto" }}
+            />
+            {l}
+          </label>
+        ))}
+        {availablePresets.length > 0 && (
+          <button onClick={addTimeSlots}>選んだ時間帯を追加</button>
+        )}
       </div>
-
-      <h1>時間帯一覧</h1>
-      {round.timeSlots.length === 0 && <p>まだ時間帯がありません。</p>}
-      {round.timeSlots.map((t) => (
-        <div
-          className="card"
-          key={t.id}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <strong>{t.label}</strong>
-          <button
-            onClick={() => deleteTimeSlot(t.id, t.label)}
-            style={{
-              padding: "4px 10px",
-              fontSize: "0.8rem",
-              background: "#7f1d1d",
-              color: "#fecaca",
-            }}
-          >
-            削除
-          </button>
-        </div>
-      ))}
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>参加者登録</h2>
         <label>名前</label>
         <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
+
+        <label>参加同盟</label>
+        <select value={alliance} onChange={(e) => setAlliance(e.target.value)}>
+          <option value="vbv">vbv</option>
+          <option value="cbs">cbs</option>
+        </select>
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 12, marginBottom: 4 }}>
           参加可能な時間帯(複数選択可)
@@ -231,19 +301,106 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         <button onClick={addParticipant}>参加者を登録</button>
       </div>
 
-      <h1>時間帯ごとの参加者</h1>
+      <h1>時間帯ごとの参加者・リーダー設定</h1>
       {round.timeSlots.length === 0 && <p>まだ時間帯がありません。</p>}
       {round.timeSlots.map((t) => {
         const inSlot = round.participants.filter((p) =>
           p.timeSlots.some((ps) => ps.timeSlotId === t.id)
         );
+        const t12Members = inSlot.filter((p) => p.hasT12);
+        const totalShield = t12Members.reduce((sum, p) => sum + (p.t12ShieldSkill ?? 0), 0);
+        const totalSpear = t12Members.reduce((sum, p) => sum + (p.t12SpearSkill ?? 0), 0);
+        const totalBow = t12Members.reduce((sum, p) => sum + (p.t12BowSkill ?? 0), 0);
+        const draft = leaderDrafts[t.id] || {
+          rallyLeaderId: "",
+          rallyLeaderUsePet: false,
+          garrisonLeaderId: "",
+          garrisonLeaderUsePet: false,
+        };
+
         return (
           <div key={t.id} className="card">
-            <h2 style={{ marginTop: 0 }}>
-              {t.label}({inSlot.length}人)
-            </h2>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
+              <h2 style={{ marginTop: 0 }}>
+                {t.label}({inSlot.length}人)
+              </h2>
+              <button
+                onClick={() => deleteTimeSlot(t.id, t.label)}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#7f1d1d",
+                  color: "#fecaca",
+                }}
+              >
+                削除
+              </button>
+            </div>
+
+            <div style={{ color: "#38bdf8", fontSize: "0.9rem", marginBottom: 8 }}>
+              T12合計Lv 盾{totalShield} / 槍{totalSpear} / 弓{totalBow}
+            </div>
+
+            <div className="row">
+              <div>
+                <label>集結リーダー</label>
+                <select
+                  value={draft.rallyLeaderId}
+                  onChange={(e) => updateDraft(t.id, { rallyLeaderId: e.target.value })}
+                >
+                  <option value="">(未選択)</option>
+                  {inSlot.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.playerName}
+                    </option>
+                  ))}
+                </select>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.rallyLeaderUsePet}
+                    onChange={(e) =>
+                      updateDraft(t.id, { rallyLeaderUsePet: e.target.checked })
+                    }
+                    style={{ width: "auto" }}
+                  />
+                  ペット使用
+                </label>
+              </div>
+              <div>
+                <label>駐屯リーダー</label>
+                <select
+                  value={draft.garrisonLeaderId}
+                  onChange={(e) => updateDraft(t.id, { garrisonLeaderId: e.target.value })}
+                >
+                  <option value="">(未選択)</option>
+                  {inSlot.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.playerName}
+                    </option>
+                  ))}
+                </select>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.garrisonLeaderUsePet}
+                    onChange={(e) =>
+                      updateDraft(t.id, { garrisonLeaderUsePet: e.target.checked })
+                    }
+                    style={{ width: "auto" }}
+                  />
+                  ペット使用
+                </label>
+              </div>
+            </div>
+            <button onClick={() => saveLeaders(t.id)}>リーダー設定を保存</button>
+
             {inSlot.length === 0 && (
-              <p style={{ color: "#94a3b8" }}>まだこの時間帯の参加者がいません。</p>
+              <p style={{ color: "#94a3b8", marginTop: 16 }}>
+                まだこの時間帯の参加者がいません。
+              </p>
             )}
             {inSlot.map((p) => (
               <div
@@ -254,13 +411,17 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                   alignItems: "flex-start",
                   borderTop: "1px solid #334155",
                   paddingTop: 8,
-                  marginTop: 8,
+                  marginTop: 16,
                 }}
               >
                 <div>
                   <strong>{p.playerName}</strong>
+                  <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                    {" "}
+                    ({p.alliance || "-"})
+                  </span>
                   {p.noSleepRisk && (
-                    <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}> (寝落ちなし)</span>
+                    <span style={{ color: "#38bdf8", fontSize: "0.8rem" }}> 寝落ちなし</span>
                   )}
                   <div>
                     T12:{" "}
