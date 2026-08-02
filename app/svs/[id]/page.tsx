@@ -40,6 +40,10 @@ type SvsRound = {
 
 const presetLabels = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
 
+function totalSkill(p: Participant) {
+  return (p.t12ShieldSkill ?? 0) + (p.t12SpearSkill ?? 0) + (p.t12BowSkill ?? 0);
+}
+
 type LeaderDraft = {
   rallyLeaderId: string;
   rallyLeaderUsePet: boolean;
@@ -439,7 +443,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             )}
 
             {(["vbv", "cbs"] as const).map((allianceKey) => {
-              const members = inSlot.filter((p) => p.alliance === allianceKey);
+              const members = inSlot
+                .filter((p) => p.alliance === allianceKey)
+                .sort((a, b) => totalSkill(b) - totalSkill(a));
               if (members.length === 0) return null;
               return (
                 <div key={allianceKey} style={{ marginTop: 16 }}>
@@ -538,6 +544,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                 </div>
                 {inSlot
                   .filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs")
+                  .sort((a, b) => totalSkill(b) - totalSkill(a))
                   .map((p) => (
                     <div
                       key={p.id}
