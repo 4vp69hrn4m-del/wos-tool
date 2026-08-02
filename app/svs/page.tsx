@@ -55,7 +55,7 @@ export default function SvsListPage() {
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>新しい開催回を追加</h2>
-        <label>開催回の名前(例: SVS 2608)</label>
+        <label>開催回の名前(例: SVS 350)</label>
         <input value={roundName} onChange={(e) => setRoundName(e.target.value)} />
 
         <label>開催日</label>
