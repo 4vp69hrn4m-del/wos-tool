@@ -14,7 +14,11 @@ datasource db {
 model Hero {
   id        Int      @id @default(autoincrement())
   name      String   @unique
-  troopType String? // 歩兵 / 騎兵 / 弓兵 など
+  troopType String // "歩兵"(盾) / "騎兵"(槍) / "弓兵"(弓) のいずれか
+  atk       Int?
+  def       Int?
+  hp        Int?
+  lethality Int?
   notes     String?
   createdAt DateTime @default(now())
 }
@@ -43,9 +47,10 @@ model Formation {
   side      String // "self" or "opponent"
   formationType String? // "attack" or "defense"
 
-  hero1Name String?
-  hero2Name String?
-  hero3Name String?
+  shieldHeroName String? // 盾英雄(歩兵)
+  spearHeroName  String? // 槍英雄(騎兵)
+  bowHeroName    String? // 弓英雄(弓兵)
+
   expertName String?
   petName    String?
 
