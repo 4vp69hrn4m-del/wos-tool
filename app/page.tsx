@@ -120,6 +120,9 @@ export default function Home() {
               const inSlot = latestRound.participants.filter((p) =>
                 garrisonIds.includes(p.id)
               );
+              const totalAvailable = latestRound.participants.filter((p) =>
+                p.timeSlots.some((ps) => ps.timeSlotId === t.id)
+              ).length;
               const vbvMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "vbv"),
                 t.garrisonLeaderId
@@ -136,7 +139,7 @@ export default function Home() {
               return (
                 <div className="card" key={t.id}>
                   <strong>
-                    {t.label}({inSlot.length}人)
+                    {t.label}({totalAvailable}人)
                   </strong>
                   {inSlot.length === 0 && (
                     <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
