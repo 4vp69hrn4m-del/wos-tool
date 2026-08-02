@@ -171,4 +171,12 @@ export default function MasterPage() {
 
         <div style={{ marginTop: 16 }}>
           {pets.map((p) => (
-            
+            <div key={p.id}>
+              ・{p.name} {p.skill ? `(${p.skill})` : ""}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
