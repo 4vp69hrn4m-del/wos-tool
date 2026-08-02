@@ -24,6 +24,20 @@ export async function PATCH(
     },
   });
 
+  if (Array.isArray(body.garrisonMemberIds)) {
+    const ids: number[] = body.garrisonMemberIds
+      .map((v: unknown) => Number(v))
+      .filter((n: number) => !Number.isNaN(n))
+      .slice(0, 12);
+
+    await prisma.svsGarrisonMember.deleteMany({ where: { timeSlotId: id } });
+    if (ids.length > 0) {
+      await prisma.svsGarrisonMember.createMany({
+        data: ids.map((participantId) => ({ timeSlotId: id, participantId })),
+      });
+    }
+  }
+
   return NextResponse.json(timeSlot);
 }
 
