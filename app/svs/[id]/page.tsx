@@ -20,6 +20,7 @@ type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: stri
 type Participant = {
   id: number;
   playerName: string;
+  homeAlliance: string | null;
   alliance: string | null;
   hasT12: boolean;
   t12ShieldSkill: number | null;
@@ -58,6 +59,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
   const [checkedPresets, setCheckedPresets] = useState<string[]>([]);
 
   const [playerName, setPlayerName] = useState("");
+  const [homeAlliance, setHomeAlliance] = useState("");
   const [alliance, setAlliance] = useState("vbv");
   const [selectedSlotIds, setSelectedSlotIds] = useState<number[]>([]);
   const [hasT12, setHasT12] = useState(false);
@@ -130,6 +132,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         playerName,
+        homeAlliance,
         alliance,
         hasT12,
         t12ShieldSkill: hasT12 ? t12ShieldSkill : "",
@@ -140,6 +143,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       }),
     });
     setPlayerName("");
+    setHomeAlliance("");
     setSelectedSlotIds([]);
     setHasT12(false);
     setNoSleepRisk(false);
@@ -280,7 +284,10 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         <label>名前</label>
         <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
 
-        <label>参加同盟</label>
+        <label>所属同盟(実際に入っている同盟名)</label>
+        <input value={homeAlliance} onChange={(e) => setHomeAlliance(e.target.value)} />
+
+        <label>参加希望同盟(今回のSVSでvbv/cbsどちらとして参加するか)</label>
         <select value={alliance} onChange={(e) => setAlliance(e.target.value)}>
           <option value="vbv">vbv</option>
           <option value="cbs">cbs</option>
@@ -652,6 +659,12 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                     >
                       <div>
                         <strong>{p.playerName}</strong>
+                        {p.homeAlliance && (
+                          <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                            {" "}
+                            [{p.homeAlliance}]
+                          </span>
+                        )}
                         {p.id === t.garrisonLeaderId && (
                           <span
                             style={{
@@ -750,6 +763,12 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                     >
                       <div>
                         <strong>{p.playerName}</strong>
+                        {p.homeAlliance && (
+                          <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                            {" "}
+                            [{p.homeAlliance}]
+                          </span>
+                        )}
                         {p.id === t.garrisonLeaderId && (
                           <span
                             style={{
