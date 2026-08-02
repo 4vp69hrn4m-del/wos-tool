@@ -9,6 +9,9 @@ export default function Home() {
         <p>
           <Link href="/formations">→ 編成を登録する / 一覧を見る</Link>
         </p>
+        <p>
+          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理</Link>
+        </p>
       </div>
     </div>
   );
