@@ -469,6 +469,15 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                   style={{ width: "auto" }}
                 />
                 {p.playerName}
+                <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                  (
+                  {p.hasT12
+                    ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                        p.t12BowSkill ?? "-"
+                      }`
+                    : "T12なし"}
+                  )
+                </span>
               </label>
             ))}
 
