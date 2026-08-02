@@ -427,10 +427,34 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               /24
             </div>
             <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: 2 }}>
-              vbv: 盾{totalVbv.shield} / 槍{totalVbv.spear} / 弓{totalVbv.bow}
+              vbv: 盾
+              <span style={{ color: totalVbv.shield > 24 ? "#f87171" : "inherit" }}>
+                {totalVbv.shield}
+              </span>{" "}
+              / 槍
+              <span style={{ color: totalVbv.spear > 24 ? "#f87171" : "inherit" }}>
+                {totalVbv.spear}
+              </span>{" "}
+              / 弓
+              <span style={{ color: totalVbv.bow > 24 ? "#f87171" : "inherit" }}>
+                {totalVbv.bow}
+              </span>{" "}
+              /24
             </div>
             <div style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: 8 }}>
-              cbs: 盾{totalCbs.shield} / 槍{totalCbs.spear} / 弓{totalCbs.bow}
+              cbs: 盾
+              <span style={{ color: totalCbs.shield > 24 ? "#f87171" : "inherit" }}>
+                {totalCbs.shield}
+              </span>{" "}
+              / 槍
+              <span style={{ color: totalCbs.spear > 24 ? "#f87171" : "inherit" }}>
+                {totalCbs.spear}
+              </span>{" "}
+              / 弓
+              <span style={{ color: totalCbs.bow > 24 ? "#f87171" : "inherit" }}>
+                {totalCbs.bow}
+              </span>{" "}
+              /24
             </div>
 
             <div className="row">
