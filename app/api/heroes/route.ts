@@ -30,8 +30,10 @@ export async function POST(req: NextRequest) {
       def: toInt(body.def),
       hp: toInt(body.hp),
       lethality: toInt(body.lethality),
+      skillEffectTarget1: body.skillEffectTarget1 || null,
       skillEffectStat1: body.skillEffectStat1 || null,
       skillEffectValue1: toInt(body.skillEffectValue1),
+      skillEffectTarget2: body.skillEffectTarget2 || null,
       skillEffectStat2: body.skillEffectStat2 || null,
       skillEffectValue2: toInt(body.skillEffectValue2),
       skills: body.skills || null,
@@ -40,4 +42,3 @@ export async function POST(req: NextRequest) {
   });
   return NextResponse.json(hero);
 }
-
