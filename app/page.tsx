@@ -5,12 +5,14 @@ import Link from "next/link";
 import { adminFetch } from "@/lib/adminClient";
 
 type GarrisonMember = { participantId: number };
+type RallyLeader = { participantId: number; usePet: boolean };
 type TimeSlot = {
   id: number;
   label: string;
   garrisonLeaderVbvId: number | null;
   garrisonLeaderCbsId: number | null;
   garrisonMembers: GarrisonMember[];
+  rallyLeaders: RallyLeader[];
 };
 type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
 type Participant = {
@@ -33,6 +35,7 @@ type SvsRound = {
 };
 
 const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
+const ALLIANCE_COLOR = "#4ade80"; // vbv/cbs見出し共通の緑色
 
 function sortBySkill(members: Participant[]) {
   return [...members].sort(
@@ -50,22 +53,51 @@ function orderWithLeaderFirst(members: Participant[], leaderId: number | null) {
   return leader ? [leader, ...rest] : rest;
 }
 
-function ParticipantLine({ p, isLeader }: { p: Participant; isLeader?: boolean }) {
+function ParticipantLine({
+  p,
+  isGarrisonLeader,
+  rallyLeader,
+}: {
+  p: Participant;
+  isGarrisonLeader?: boolean;
+  rallyLeader?: RallyLeader | null;
+}) {
   return (
     <div style={{ fontSize: "0.9rem", marginTop: 6 }}>
-      ・{p.playerName}
-      {isLeader && (
-        <span style={{ color: "#38bdf8", fontSize: "0.75rem", fontWeight: 600 }}>
-          {" "}
-          駐屯リーダー
+      <span style={{ fontWeight: 600 }}>・{p.playerName}</span>
+      <div style={{ marginTop: 2 }}>
+        {isGarrisonLeader && (
+          <span
+            style={{
+              color: "#38bdf8",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              marginRight: 8,
+            }}
+          >
+            駐屯リーダー
+          </span>
+        )}
+        {rallyLeader && (
+          <span
+            style={{
+              color: "#f87171",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              marginRight: 8,
+            }}
+          >
+            集結リーダー{rallyLeader.usePet ? "🐱" : ""}
+          </span>
+        )}
+        <span style={{ color: "#cbd5e1" }}>
+          {p.hasT12
+            ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                p.t12BowSkill ?? "-"
+              }`
+            : "T12なし"}
         </span>
-      )}
-      {p.homeAlliance && (
-        <span style={{ color: "#94a3b8" }}> [{p.homeAlliance}]</span>
-      )}{" "}
-      {p.hasT12
-        ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${p.t12BowSkill ?? "-"}`
-        : "T12なし"}
+      </div>
     </div>
   );
 }
@@ -178,6 +210,8 @@ export default function Home() {
                 inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
                 null
               );
+              const rallyLeaderOf = (pid: number) =>
+                t.rallyLeaders.find((r) => r.participantId === pid) || null;
 
               return (
                 <div className="card" key={t.id}>
@@ -200,14 +234,24 @@ export default function Home() {
                   >
                     {vbvMembers.length > 0 && (
                       <div>
-                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                        <div
+                          style={{
+                            color: ALLIANCE_COLOR,
+                            fontSize: "0.85rem",
+                            fontWeight: 700,
+                            borderBottom: `1px solid ${ALLIANCE_COLOR}`,
+                            paddingBottom: 4,
+                            marginBottom: 4,
+                          }}
+                        >
                           vbv({vbvMembers.length}人)
                         </div>
                         {vbvMembers.map((p) => (
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isLeader={p.id === t.garrisonLeaderVbvId}
+                            isGarrisonLeader={p.id === t.garrisonLeaderVbvId}
+                            rallyLeader={rallyLeaderOf(p.id)}
                           />
                         ))}
                       </div>
@@ -215,14 +259,24 @@ export default function Home() {
 
                     {cbsMembers.length > 0 && (
                       <div>
-                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
+                        <div
+                          style={{
+                            color: ALLIANCE_COLOR,
+                            fontSize: "0.85rem",
+                            fontWeight: 700,
+                            borderBottom: `1px solid ${ALLIANCE_COLOR}`,
+                            paddingBottom: 4,
+                            marginBottom: 4,
+                          }}
+                        >
                           cbs({cbsMembers.length}人)
                         </div>
                         {cbsMembers.map((p) => (
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isLeader={p.id === t.garrisonLeaderCbsId}
+                            isGarrisonLeader={p.id === t.garrisonLeaderCbsId}
+                            rallyLeader={rallyLeaderOf(p.id)}
                           />
                         ))}
                       </div>
@@ -235,7 +289,11 @@ export default function Home() {
                         未設定({otherMembers.length}人)
                       </div>
                       {otherMembers.map((p) => (
-                        <ParticipantLine p={p} key={p.id} isLeader={false} />
+                        <ParticipantLine
+                          p={p}
+                          key={p.id}
+                          rallyLeader={rallyLeaderOf(p.id)}
+                        />
                       ))}
                     </div>
                   )}
