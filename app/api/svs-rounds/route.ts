@@ -9,6 +9,8 @@ export async function GET() {
   return NextResponse.json(rounds);
 }
 
+const PRESET_TIME_SLOTS = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -22,6 +24,9 @@ export async function POST(req: NextRequest) {
       eventDate: body.eventDate ? new Date(body.eventDate) : null,
       opponent: body.opponent || null,
       status: body.status || null,
+      timeSlots: {
+        create: PRESET_TIME_SLOTS.map((label) => ({ label })),
+      },
     },
   });
 
