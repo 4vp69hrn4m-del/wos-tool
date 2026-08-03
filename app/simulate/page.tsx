@@ -31,26 +31,14 @@ type Formation = {
   bowHeroName: string | null;
   equipShieldAtkPct: number | null;
   equipShieldDefPct: number | null;
-  equipShieldLethalityPct: number | null;
-  equipShieldHpPct: number | null;
   equipSpearAtkPct: number | null;
   equipSpearDefPct: number | null;
-  equipSpearLethalityPct: number | null;
-  equipSpearHpPct: number | null;
   equipBowAtkPct: number | null;
   equipBowDefPct: number | null;
-  equipBowLethalityPct: number | null;
-  equipBowHpPct: number | null;
-  gemShieldAtkPct: number | null;
-  gemShieldDefPct: number | null;
   gemShieldLethalityPct: number | null;
   gemShieldHpPct: number | null;
-  gemSpearAtkPct: number | null;
-  gemSpearDefPct: number | null;
   gemSpearLethalityPct: number | null;
   gemSpearHpPct: number | null;
-  gemBowAtkPct: number | null;
-  gemBowDefPct: number | null;
   gemBowLethalityPct: number | null;
   gemBowHpPct: number | null;
 };
@@ -91,14 +79,20 @@ function statSuffix(stat: StatKey): string {
   return "Lethality";
 }
 
-// 領主装備・領主宝石の%を、英雄の兵種に応じて乗算で反映する
+// 領主装備(攻撃力・防御力のみ)・領主宝石(殺傷力・HPのみ)の%を、
+// 英雄の兵種に応じて乗算で反映する
 function equipGemMultiplier(hero: Hero, formation: Formation, stat: StatKey): number {
   const prefix = troopPrefix(hero.troopType);
   const suffix = statSuffix(stat);
-  const equipKey = `equip${prefix}${suffix}Pct` as keyof Formation;
-  const gemKey = `gem${prefix}${suffix}Pct` as keyof Formation;
-  const equipPct = (formation[equipKey] as number | null) ?? 0;
-  const gemPct = (formation[gemKey] as number | null) ?? 0;
+  let equipPct = 0;
+  let gemPct = 0;
+  if (stat === "atk" || stat === "def") {
+    const equipKey = `equip${prefix}${suffix}Pct` as keyof Formation;
+    equipPct = (formation[equipKey] as number | null) ?? 0;
+  } else {
+    const gemKey = `gem${prefix}${suffix}Pct` as keyof Formation;
+    gemPct = (formation[gemKey] as number | null) ?? 0;
+  }
   return (1 + equipPct / 100) * (1 + gemPct / 100);
 }
 
