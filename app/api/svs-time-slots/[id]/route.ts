@@ -21,12 +21,32 @@ export async function PATCH(
   const timeSlot = await prisma.svsTimeSlot.update({
     where: { id },
     data: {
-      rallyLeaderId: toIntOrNull(body.rallyLeaderId),
-      rallyLeaderUsePet: !!body.rallyLeaderUsePet,
-      garrisonLeaderId: toIntOrNull(body.garrisonLeaderId),
-      garrisonLeaderUsePet: !!body.garrisonLeaderUsePet,
+      garrisonLeaderVbvId: toIntOrNull(body.garrisonLeaderVbvId),
+      garrisonLeaderVbvUsePet: !!body.garrisonLeaderVbvUsePet,
+      garrisonLeaderCbsId: toIntOrNull(body.garrisonLeaderCbsId),
+      garrisonLeaderCbsUsePet: !!body.garrisonLeaderCbsUsePet,
     },
   });
+
+  if (Array.isArray(body.rallyLeaders)) {
+    const rallyLeaders: { participantId: number; usePet: boolean }[] = body.rallyLeaders
+      .map((r: { participantId: unknown; usePet: unknown }) => ({
+        participantId: Number(r.participantId),
+        usePet: !!r.usePet,
+      }))
+      .filter((r: { participantId: number }) => !Number.isNaN(r.participantId));
+
+    await prisma.svsRallyLeader.deleteMany({ where: { timeSlotId: id } });
+    if (rallyLeaders.length > 0) {
+      await prisma.svsRallyLeader.createMany({
+        data: rallyLeaders.map((r) => ({
+          timeSlotId: id,
+          participantId: r.participantId,
+          usePet: r.usePet,
+        })),
+      });
+    }
+  }
 
   if (Array.isArray(body.garrisonMemberIds)) {
     const ids: number[] = body.garrisonMemberIds
