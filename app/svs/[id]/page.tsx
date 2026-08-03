@@ -4,17 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/adminClient";
 
-type LeaderInfo = { id: number; playerName: string } | null;
-
 type TimeSlot = {
   id: number;
   label: string;
-  rallyLeaderId: number | null;
-  rallyLeader: LeaderInfo;
-  rallyLeaderUsePet: boolean;
-  garrisonLeaderId: number | null;
-  garrisonLeader: LeaderInfo;
-  garrisonLeaderUsePet: boolean;
+  rallyLeaders: { participantId: number; usePet: boolean }[];
+  garrisonLeaderVbvId: number | null;
+  garrisonLeaderVbvUsePet: boolean;
+  garrisonLeaderCbsId: number | null;
+  garrisonLeaderCbsUsePet: boolean;
   garrisonMembers: { participantId: number }[];
 };
 type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
@@ -48,10 +45,11 @@ function totalSkill(p: Participant) {
 }
 
 type LeaderDraft = {
-  rallyLeaderId: string;
-  rallyLeaderUsePet: boolean;
-  garrisonLeaderId: string;
-  garrisonLeaderUsePet: boolean;
+  rallyLeaders: { participantId: number; usePet: boolean }[];
+  garrisonLeaderVbvId: string;
+  garrisonLeaderVbvUsePet: boolean;
+  garrisonLeaderCbsId: string;
+  garrisonLeaderCbsUsePet: boolean;
   garrisonMemberIds: number[];
 };
 
@@ -81,10 +79,14 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     const drafts: Record<number, LeaderDraft> = {};
     for (const t of data.timeSlots as TimeSlot[]) {
       drafts[t.id] = {
-        rallyLeaderId: t.rallyLeaderId ? String(t.rallyLeaderId) : "",
-        rallyLeaderUsePet: t.rallyLeaderUsePet,
-        garrisonLeaderId: t.garrisonLeaderId ? String(t.garrisonLeaderId) : "",
-        garrisonLeaderUsePet: t.garrisonLeaderUsePet,
+        rallyLeaders: t.rallyLeaders.map((r) => ({
+          participantId: r.participantId,
+          usePet: r.usePet,
+        })),
+        garrisonLeaderVbvId: t.garrisonLeaderVbvId ? String(t.garrisonLeaderVbvId) : "",
+        garrisonLeaderVbvUsePet: t.garrisonLeaderVbvUsePet,
+        garrisonLeaderCbsId: t.garrisonLeaderCbsId ? String(t.garrisonLeaderCbsId) : "",
+        garrisonLeaderCbsUsePet: t.garrisonLeaderCbsUsePet,
         garrisonMemberIds: t.garrisonMembers.map((g) => g.participantId),
       };
     }
@@ -150,6 +152,33 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     }));
   }
 
+  function toggleRallyLeader(slotId: number, participantId: number) {
+    setLeaderDrafts((prev) => {
+      const current = prev[slotId]?.rallyLeaders || [];
+      const isSelected = current.some((r) => r.participantId === participantId);
+      const next = isSelected
+        ? current.filter((r) => r.participantId !== participantId)
+        : [...current, { participantId, usePet: false }];
+      return {
+        ...prev,
+        [slotId]: { ...prev[slotId], rallyLeaders: next },
+      };
+    });
+  }
+
+  function updateRallyLeaderUsePet(slotId: number, participantId: number, usePet: boolean) {
+    setLeaderDrafts((prev) => {
+      const current = prev[slotId]?.rallyLeaders || [];
+      const next = current.map((r) =>
+        r.participantId === participantId ? { ...r, usePet } : r
+      );
+      return {
+        ...prev,
+        [slotId]: { ...prev[slotId], rallyLeaders: next },
+      };
+    });
+  }
+
   function toggleGarrisonMember(slotId: number, participant: Participant) {
     setLeaderDrafts((prev) => {
       const current = prev[slotId]?.garrisonMemberIds || [];
@@ -180,10 +209,11 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        rallyLeaderId: d.rallyLeaderId,
-        rallyLeaderUsePet: d.rallyLeaderUsePet,
-        garrisonLeaderId: d.garrisonLeaderId,
-        garrisonLeaderUsePet: d.garrisonLeaderUsePet,
+        rallyLeaders: d.rallyLeaders,
+        garrisonLeaderVbvId: d.garrisonLeaderVbvId,
+        garrisonLeaderVbvUsePet: d.garrisonLeaderVbvUsePet,
+        garrisonLeaderCbsId: d.garrisonLeaderCbsId,
+        garrisonLeaderCbsUsePet: d.garrisonLeaderCbsUsePet,
         garrisonMemberIds: d.garrisonMemberIds,
       }),
     });
@@ -349,10 +379,12 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         const totalVbv = sumStats(t12Members.filter((p) => p.alliance === "vbv"));
         const totalCbs = sumStats(t12Members.filter((p) => p.alliance === "cbs"));
         const draft = leaderDrafts[t.id] || {
-          rallyLeaderId: "",
-          rallyLeaderUsePet: false,
-          garrisonLeaderId: "",
-          garrisonLeaderUsePet: false,
+          rallyLeaders: [],
+          garrisonLeaderVbvId: "",
+          garrisonLeaderVbvUsePet: false,
+          garrisonLeaderCbsId: "",
+          garrisonLeaderCbsUsePet: false,
+          garrisonMemberIds: [],
         };
 
         return (
@@ -412,24 +444,113 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
             <div className="row">
               <div>
-                <label>集結リーダー</label>
+                <label>集結リーダー(vbv・複数選択可)</label>
+                {inSlot
+                  .filter((p) => p.alliance === "vbv")
+                  .map((p) => {
+                    const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
+                    return (
+                      <div key={p.id} style={{ marginBottom: 4 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={!!rl}
+                            onChange={() => toggleRallyLeader(t.id, p.id)}
+                            style={{ width: "auto" }}
+                          />
+                          {p.playerName}
+                        </label>
+                        {rl && (
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              marginLeft: 24,
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={rl.usePet}
+                              onChange={(e) =>
+                                updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
+                              }
+                              style={{ width: "auto" }}
+                            />
+                            ペット使用
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+              <div>
+                <label>集結リーダー(cbs・複数選択可)</label>
+                {inSlot
+                  .filter((p) => p.alliance === "cbs")
+                  .map((p) => {
+                    const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
+                    return (
+                      <div key={p.id} style={{ marginBottom: 4 }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <input
+                            type="checkbox"
+                            checked={!!rl}
+                            onChange={() => toggleRallyLeader(t.id, p.id)}
+                            style={{ width: "auto" }}
+                          />
+                          {p.playerName}
+                        </label>
+                        {rl && (
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              marginLeft: 24,
+                              fontSize: "0.85rem",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={rl.usePet}
+                              onChange={(e) =>
+                                updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
+                              }
+                              style={{ width: "auto" }}
+                            />
+                            ペット使用
+                          </label>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="row">
+              <div>
+                <label>駐屯リーダー(vbv・1人)</label>
                 <select
-                  value={draft.rallyLeaderId}
-                  onChange={(e) => updateDraft(t.id, { rallyLeaderId: e.target.value })}
+                  value={draft.garrisonLeaderVbvId}
+                  onChange={(e) => updateDraft(t.id, { garrisonLeaderVbvId: e.target.value })}
                 >
                   <option value="">(未選択)</option>
-                  {inSlot.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.playerName}
-                    </option>
-                  ))}
+                  {inSlot
+                    .filter((p) => p.alliance === "vbv")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.playerName}
+                      </option>
+                    ))}
                 </select>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                   <input
                     type="checkbox"
-                    checked={draft.rallyLeaderUsePet}
+                    checked={draft.garrisonLeaderVbvUsePet}
                     onChange={(e) =>
-                      updateDraft(t.id, { rallyLeaderUsePet: e.target.checked })
+                      updateDraft(t.id, { garrisonLeaderVbvUsePet: e.target.checked })
                     }
                     style={{ width: "auto" }}
                   />
@@ -437,24 +558,26 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                 </label>
               </div>
               <div>
-                <label>駐屯リーダー</label>
+                <label>駐屯リーダー(cbs・1人)</label>
                 <select
-                  value={draft.garrisonLeaderId}
-                  onChange={(e) => updateDraft(t.id, { garrisonLeaderId: e.target.value })}
+                  value={draft.garrisonLeaderCbsId}
+                  onChange={(e) => updateDraft(t.id, { garrisonLeaderCbsId: e.target.value })}
                 >
                   <option value="">(未選択)</option>
-                  {inSlot.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.playerName}
-                    </option>
-                  ))}
+                  {inSlot
+                    .filter((p) => p.alliance === "cbs")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.playerName}
+                      </option>
+                    ))}
                 </select>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                   <input
                     type="checkbox"
-                    checked={draft.garrisonLeaderUsePet}
+                    checked={draft.garrisonLeaderCbsUsePet}
                     onChange={(e) =>
-                      updateDraft(t.id, { garrisonLeaderUsePet: e.target.checked })
+                      updateDraft(t.id, { garrisonLeaderCbsUsePet: e.target.checked })
                     }
                     style={{ width: "auto" }}
                   />
@@ -623,7 +746,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             [{p.homeAlliance}]
                           </span>
                         )}
-                        {p.id === t.garrisonLeaderId && (
+                        {(p.id === t.garrisonLeaderVbvId || p.id === t.garrisonLeaderCbsId) && (
                           <span
                             style={{
                               color: "#38bdf8",
@@ -635,7 +758,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             駐屯リーダー
                           </span>
                         )}
-                        {p.id === t.rallyLeaderId && (
+                        {t.rallyLeaders.some((r) => r.participantId === p.id) && (
                           <span
                             style={{
                               color: "#f87171",
@@ -727,7 +850,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             [{p.homeAlliance}]
                           </span>
                         )}
-                        {p.id === t.garrisonLeaderId && (
+                        {(p.id === t.garrisonLeaderVbvId || p.id === t.garrisonLeaderCbsId) && (
                           <span
                             style={{
                               color: "#38bdf8",
@@ -739,7 +862,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             駐屯リーダー
                           </span>
                         )}
-                        {p.id === t.rallyLeaderId && (
+                        {t.rallyLeaders.some((r) => r.participantId === p.id) && (
                           <span
                             style={{
                               color: "#f87171",
