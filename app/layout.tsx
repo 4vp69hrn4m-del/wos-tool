@@ -22,25 +22,17 @@ export default function RootLayout({
             background: "#0f172a",
             borderBottom: "1px solid #334155",
             padding: "10px 16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
           <Link href="/" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
             🏠 ホームに戻る
           </Link>
+          <span style={{ fontSize: "0.75rem", color: "#64748b" }}>create by ななぽこ</span>
         </div>
         <main>{children}</main>
-        <div
-          style={{
-            position: "fixed",
-            bottom: 8,
-            right: 12,
-            fontSize: "0.75rem",
-            color: "#64748b",
-            pointerEvents: "none",
-          }}
-        >
-          create by ななぽこ
-        </div>
       </body>
     </html>
   );
