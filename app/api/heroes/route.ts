@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const heroes = await prisma.hero.findMany({ orderBy: { name: "asc" } });
+  const heroes = await prisma.hero.findMany({
+    orderBy: [{ troopType: "asc" }, { generation: "asc" }, { name: "asc" }],
+  });
   return NextResponse.json(heroes);
 }
 
@@ -26,6 +28,7 @@ export async function POST(req: NextRequest) {
     data: {
       name: body.name,
       troopType: body.troopType,
+      generation: toInt(body.generation),
       atk: toInt(body.atk),
       def: toInt(body.def),
       hp: toInt(body.hp),
@@ -36,9 +39,3 @@ export async function POST(req: NextRequest) {
       skillEffectTarget2: body.skillEffectTarget2 || null,
       skillEffectStat2: body.skillEffectStat2 || null,
       skillEffectValue2: toInt(body.skillEffectValue2),
-      skills: body.skills || null,
-      notes: body.notes || null,
-    },
-  });
-  return NextResponse.json(hero);
-}
