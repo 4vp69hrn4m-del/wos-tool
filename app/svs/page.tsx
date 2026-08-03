@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/adminClient";
 
 type TimeSlot = { id: number; label: string };
 type SvsRound = {
@@ -46,7 +47,8 @@ export default function SvsListPage() {
 
   async function deleteRound(id: number, name: string) {
     if (!confirm(`「${name}」を削除しますか?(中の時間帯も全て消えます)`)) return;
-    await fetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
+    if (!res) return;
     await loadRounds();
   }
 
