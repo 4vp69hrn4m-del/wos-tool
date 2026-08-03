@@ -103,6 +103,9 @@ export default function Home() {
         <p>
           <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
         </p>
+        <p>
+          <Link href="/timer">→ 王城着弾時刻計算</Link>
+        </p>
       </div>
 
       {!loading && latestRound && (
