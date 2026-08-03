@@ -12,8 +12,9 @@ export async function GET(
     include: {
       timeSlots: {
         include: {
-          rallyLeader: true,
-          garrisonLeader: true,
+          rallyLeaders: { include: { participant: true } },
+          garrisonLeaderVbv: true,
+          garrisonLeaderCbs: true,
           garrisonMembers: { include: { participant: true } },
         },
       },
