@@ -108,13 +108,18 @@ function ParticipantLine({
           集結{rallyLeader.usePet ? "🐱" : ""}
         </span>
       )}
-      <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-        {p.hasT12
-          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-              p.t12BowSkill ?? "-"
-            }`
-          : "T12なし"}
-      </span>
+      {!(
+        (garrisonLeaderUsePet !== null && garrisonLeaderUsePet !== undefined) ||
+        rallyLeader
+      ) && (
+        <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+          {p.hasT12
+            ? `${p.t12ShieldSkill ?? "-"}/${p.t12SpearSkill ?? "-"}/${
+                p.t12BowSkill ?? "-"
+              }`
+            : "T12なし"}
+        </span>
+      )}
     </div>
   );
 }
