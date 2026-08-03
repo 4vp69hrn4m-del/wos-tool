@@ -48,6 +48,9 @@ const statCols = [
   ["hp", "HP"],
 ] as const;
 
+const equipCols = statCols.filter(([key]) => key === "atk" || key === "def");
+const gemCols = statCols.filter(([key]) => key === "lethality" || key === "hp");
+
 const troopRows = [
   ["shield", "盾兵"],
   ["spear", "槍兵"],
@@ -55,9 +58,11 @@ const troopRows = [
 ] as const;
 
 function StatGrid({
+  cols,
   values,
   onChange,
 }: {
+  cols: readonly (readonly [string, string])[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
 }) {
@@ -67,7 +72,7 @@ function StatGrid({
         <thead>
           <tr>
             <th style={{ textAlign: "left", padding: 4 }}></th>
-            {statCols.map(([key, label]) => (
+            {cols.map(([key, label]) => (
               <th key={key} style={{ padding: 4 }}>
                 {label}
               </th>
@@ -78,7 +83,7 @@ function StatGrid({
           {troopRows.map(([troopKey, troopLabel]) => (
             <tr key={troopKey}>
               <td style={{ padding: 4, color: "#94a3b8" }}>{troopLabel}</td>
-              {statCols.map(([statKey]) => (
+              {cols.map(([statKey]) => (
                 <td key={statKey} style={{ padding: 2 }}>
                   <input
                     value={values[`${troopKey}_${statKey}`] || ""}
@@ -132,11 +137,15 @@ export default function FormationsPage() {
     try {
       const body: Record<string, unknown> = { ...form };
       for (const [troopKey] of troopRows) {
-        for (const [statKey] of statCols) {
+        const troopCapKey = troopKey.charAt(0).toUpperCase() + troopKey.slice(1);
+        for (const [statKey] of equipCols) {
           const k = `${troopKey}_${statKey}`;
           const capKey = statKey.charAt(0).toUpperCase() + statKey.slice(1);
-          const troopCapKey = troopKey.charAt(0).toUpperCase() + troopKey.slice(1);
           body[`equip${troopCapKey}${capKey}Pct`] = equipStats[k] || "";
+        }
+        for (const [statKey] of gemCols) {
+          const k = `${troopKey}_${statKey}`;
+          const capKey = statKey.charAt(0).toUpperCase() + statKey.slice(1);
           body[`gem${troopCapKey}${capKey}Pct`] = gemStats[k] || "";
         }
       }
@@ -281,6 +290,7 @@ export default function FormationsPage() {
           領主装備(%・任意)
         </p>
         <StatGrid
+          cols={equipCols}
           values={equipStats}
           onChange={(k, v) => setEquipStats((prev) => ({ ...prev, [k]: v }))}
         />
@@ -289,6 +299,7 @@ export default function FormationsPage() {
           領主宝石(%・任意)
         </p>
         <StatGrid
+          cols={gemCols}
           values={gemStats}
           onChange={(k, v) => setGemStats((prev) => ({ ...prev, [k]: v }))}
         />
