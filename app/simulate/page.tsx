@@ -29,10 +29,35 @@ type Formation = {
   shieldHeroName: string | null;
   spearHeroName: string | null;
   bowHeroName: string | null;
+  equipShieldAtkPct: number | null;
+  equipShieldDefPct: number | null;
+  equipShieldLethalityPct: number | null;
+  equipShieldHpPct: number | null;
+  equipSpearAtkPct: number | null;
+  equipSpearDefPct: number | null;
+  equipSpearLethalityPct: number | null;
+  equipSpearHpPct: number | null;
+  equipBowAtkPct: number | null;
+  equipBowDefPct: number | null;
+  equipBowLethalityPct: number | null;
+  equipBowHpPct: number | null;
+  gemShieldAtkPct: number | null;
+  gemShieldDefPct: number | null;
+  gemShieldLethalityPct: number | null;
+  gemShieldHpPct: number | null;
+  gemSpearAtkPct: number | null;
+  gemSpearDefPct: number | null;
+  gemSpearLethalityPct: number | null;
+  gemSpearHpPct: number | null;
+  gemBowAtkPct: number | null;
+  gemBowDefPct: number | null;
+  gemBowLethalityPct: number | null;
+  gemBowHpPct: number | null;
 };
 
 type Stats = { atk: number; def: number; hp: number; lethality: number };
 type Effect = { stat: string; value: number; target: string };
+type StatKey = keyof Stats;
 
 const statLabel: Record<string, string> = {
   atk: "攻撃力",
@@ -53,14 +78,49 @@ function getHeroesInFormation(formation: Formation | null, heroes: Hero[]): Hero
     .filter((h): h is Hero => !!h);
 }
 
-function baseStats(hs: Hero[]): Stats {
+function troopPrefix(troopType: string): "Shield" | "Spear" | "Bow" {
+  if (troopType === "歩兵") return "Shield";
+  if (troopType === "騎兵") return "Spear";
+  return "Bow";
+}
+
+function statSuffix(stat: StatKey): string {
+  if (stat === "atk") return "Atk";
+  if (stat === "def") return "Def";
+  if (stat === "hp") return "Hp";
+  return "Lethality";
+}
+
+// 領主装備・領主宝石の%を、英雄の兵種に応じて乗算で反映する
+function equipGemMultiplier(hero: Hero, formation: Formation, stat: StatKey): number {
+  const prefix = troopPrefix(hero.troopType);
+  const suffix = statSuffix(stat);
+  const equipKey = `equip${prefix}${suffix}Pct` as keyof Formation;
+  const gemKey = `gem${prefix}${suffix}Pct` as keyof Formation;
+  const equipPct = (formation[equipKey] as number | null) ?? 0;
+  const gemPct = (formation[gemKey] as number | null) ?? 0;
+  return (1 + equipPct / 100) * (1 + gemPct / 100);
+}
+
+function adjustedBaseStats(hs: Hero[], formation: Formation | null): Stats {
   return hs.reduce(
-    (sum, h) => ({
-      atk: sum.atk + (h.atk ?? 0),
-      def: sum.def + (h.def ?? 0),
-      hp: sum.hp + (h.hp ?? 0),
-      lethality: sum.lethality + (h.lethality ?? 0),
-    }),
+    (sum, h) => {
+      if (!formation) {
+        return {
+          atk: sum.atk + (h.atk ?? 0),
+          def: sum.def + (h.def ?? 0),
+          hp: sum.hp + (h.hp ?? 0),
+          lethality: sum.lethality + (h.lethality ?? 0),
+        };
+      }
+      return {
+        atk: sum.atk + (h.atk ?? 0) * equipGemMultiplier(h, formation, "atk"),
+        def: sum.def + (h.def ?? 0) * equipGemMultiplier(h, formation, "def"),
+        hp: sum.hp + (h.hp ?? 0) * equipGemMultiplier(h, formation, "hp"),
+        lethality:
+          sum.lethality + (h.lethality ?? 0) * equipGemMultiplier(h, formation, "lethality"),
+      };
+    },
     { atk: 0, def: 0, hp: 0, lethality: 0 }
   );
 }
@@ -84,7 +144,7 @@ function collectEffects(hs: Hero[]): Effect[] {
 
 function applyEffects(base: Stats, selfEffects: Effect[], enemyEffects: Effect[]): Stats {
   const result = { ...base };
-  (Object.keys(result) as (keyof Stats)[]).forEach((stat) => {
+  (Object.keys(result) as StatKey[]).forEach((stat) => {
     const boost = selfEffects
       .filter((e) => e.target === "self" && e.stat === stat)
       .reduce((sum, e) => sum + e.value, 0);
@@ -120,8 +180,8 @@ export default function SimulatePage() {
   const selfHeroes = getHeroesInFormation(selfFormation, heroes);
   const opponentHeroes = getHeroesInFormation(opponentFormation, heroes);
 
-  const selfBase = baseStats(selfHeroes);
-  const opponentBase = baseStats(opponentHeroes);
+  const selfBase = adjustedBaseStats(selfHeroes, selfFormation);
+  const opponentBase = adjustedBaseStats(opponentHeroes, opponentFormation);
 
   const selfEffects = collectEffects(selfHeroes);
   const opponentEffects = collectEffects(opponentHeroes);
@@ -134,7 +194,7 @@ export default function SimulatePage() {
   let selfWins = 0;
   let opponentWins = 0;
   if (showResult) {
-    (Object.keys(selfFinal) as (keyof Stats)[]).forEach((stat) => {
+    (Object.keys(selfFinal) as StatKey[]).forEach((stat) => {
       if (selfFinal[stat] > opponentFinal[stat]) selfWins++;
       else if (selfFinal[stat] < opponentFinal[stat]) opponentWins++;
     });
@@ -151,7 +211,7 @@ export default function SimulatePage() {
     <div>
       <h1>編成シミュレーター(簡易版)</h1>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        英雄の基礎ステータスとスキル効果だけを使った参考スコアです。専門家・ペット・兵種比率・装備・実戦データは反映していません。
+        英雄の基礎ステータス・スキル効果・領主装備・領主宝石(兵種ごとに乗算)を使った参考スコアです。専門家・ペット・兵種比率・実戦データはまだ反映していません。
       </p>
 
       <div className="card">
@@ -192,7 +252,7 @@ export default function SimulatePage() {
               {verdict}
             </span>
           </h2>
-          {(Object.keys(selfFinal) as (keyof Stats)[]).map((stat) => (
+          {(Object.keys(selfFinal) as StatKey[]).map((stat) => (
             <div key={stat} style={{ marginTop: 8 }}>
               <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>{statLabel[stat]}</div>
               <div className="row">
