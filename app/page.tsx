@@ -100,6 +100,9 @@ export default function Home() {
         <p>
           <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
         </p>
+        <p>
+          <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
+        </p>
       </div>
 
       {!loading && latestRound && (
