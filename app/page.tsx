@@ -29,6 +29,12 @@ type SvsRound = {
   timeSlots: TimeSlot[];
   participants: Participant[];
 };
+type Announcement = {
+  id: number;
+  message: string;
+  authorName: string | null;
+  createdAt: string;
+};
 
 const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
 
@@ -71,10 +77,17 @@ function ParticipantLine({ p, isLeader }: { p: Participant; isLeader?: boolean }
 export default function Home() {
   const [latestRound, setLatestRound] = useState<SvsRound | null>(null);
   const [loading, setLoading] = useState(true);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [announceName, setAnnounceName] = useState("");
+  const [announceMessage, setAnnounceMessage] = useState("");
 
   async function load() {
     setLoading(true);
-    const list = await fetch("/api/svs-rounds").then((r) => r.json());
+    const [list, announceList] = await Promise.all([
+      fetch("/api/svs-rounds").then((r) => r.json()),
+      fetch("/api/announcements").then((r) => r.json()),
+    ]);
+    setAnnouncements(announceList);
     if (list.length === 0) {
       setLatestRound(null);
       setLoading(false);
@@ -95,9 +108,86 @@ export default function Home() {
     await load();
   }
 
+  async function postAnnouncement() {
+    if (!announceMessage.trim()) return;
+    await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: announceMessage, authorName: announceName }),
+    });
+    setAnnounceMessage("");
+    await load();
+  }
+
+  async function deleteAnnouncement(id: number) {
+    if (!confirm("このお知らせを削除しますか?")) return;
+    await fetch(`/api/announcements/${id}`, { method: "DELETE" });
+    await load();
+  }
+
   return (
     <div>
       <h1>WOS 編成分析ツール(vbv.cbs.ONK専用)</h1>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>お知らせ</h2>
+        <label>名前(任意)</label>
+        <input value={announceName} onChange={(e) => setAnnounceName(e.target.value)} />
+        <label>内容</label>
+        <textarea
+          value={announceMessage}
+          onChange={(e) => setAnnounceMessage(e.target.value)}
+          rows={3}
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: "8px",
+            border: "1px solid #334155",
+            background: "#0f172a",
+            color: "#e2e8f0",
+            fontSize: "1rem",
+          }}
+        />
+        <button onClick={postAnnouncement}>投稿する</button>
+
+        <div style={{ marginTop: 16 }}>
+          {announcements.length === 0 && (
+            <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>まだお知らせがありません。</p>
+          )}
+          {announcements.map((a) => (
+            <div
+              key={a.id}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                borderTop: "1px solid #334155",
+                paddingTop: 8,
+                marginTop: 8,
+              }}
+            >
+              <div>
+                <div style={{ whiteSpace: "pre-wrap" }}>{a.message}</div>
+                <div style={{ color: "#94a3b8", fontSize: "0.75rem", marginTop: 4 }}>
+                  {a.authorName || "匿名"} ・ {new Date(a.createdAt).toLocaleString("ja-JP")}
+                </div>
+              </div>
+              <button
+                onClick={() => deleteAnnouncement(a.id)}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#7f1d1d",
+                  color: "#fecaca",
+                  flexShrink: 0,
+                }}
+              >
+                削除
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>SVS用</h2>
@@ -106,20 +196,6 @@ export default function Home() {
         </p>
         <p>
           <Link href="/timer">→ 王城着弾時刻計算</Link>
-        </p>
-      </div>
-
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>編成・シミュレーター用</h2>
-        <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
-        <p>
-          <Link href="/formations">→ 編成を登録する / 一覧を見る(作成中)</Link>
-        </p>
-        <p>
-          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理(作成中)</Link>
-        </p>
-        <p>
-          <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
         </p>
       </div>
 
@@ -255,6 +331,20 @@ export default function Home() {
             })}
         </>
       )}
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>編成・シミュレーター用</h2>
+        <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
+        <p>
+          <Link href="/formations">→ 編成を登録する / 一覧を見る(作成中)</Link>
+        </p>
+        <p>
+          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理(作成中)</Link>
+        </p>
+        <p>
+          <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
+        </p>
+      </div>
     </div>
   );
 }
