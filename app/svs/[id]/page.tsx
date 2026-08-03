@@ -56,7 +56,6 @@ type LeaderDraft = {
 
 export default function SvsRoundDetailPage({ params }: { params: { id: string } }) {
   const [round, setRound] = useState<SvsRound | null>(null);
-  const [checkedPresets, setCheckedPresets] = useState<string[]>([]);
 
   const [playerName, setPlayerName] = useState("");
   const [homeAlliance, setHomeAlliance] = useState("");
@@ -95,21 +94,23 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     load();
   }, []);
 
-  function togglePreset(l: string) {
-    setCheckedPresets((prev) =>
-      prev.includes(l) ? prev.filter((x) => x !== l) : [...prev, l]
-    );
-  }
-
-  async function addTimeSlots() {
-    for (const l of checkedPresets) {
+  async function togglePresetSlot(label: string) {
+    const existing = round?.timeSlots.find((t) => t.label === label);
+    if (existing) {
+      if (
+        !confirm(
+          `「${label}」を削除しますか?(この時間帯のリーダー・駐屯メンバー設定も消えます)`
+        )
+      )
+        return;
+      await fetch(`/api/svs-time-slots/${existing.id}`, { method: "DELETE" });
+    } else {
       await fetch(`/api/svs-rounds/${params.id}/time-slots`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: l }),
+        body: JSON.stringify({ label }),
       });
     }
-    setCheckedPresets([]);
     await load();
   }
 
@@ -217,10 +218,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   if (!round) return <div>読み込み中...</div>;
 
-  const availablePresets = presetLabels.filter(
-    (l) => !round.timeSlots.some((t) => t.label === l)
-  );
-
   const sortedTimeSlots = [...round.timeSlots].sort(
     (a, b) => presetLabels.indexOf(a.label) - presetLabels.indexOf(b.label)
   );
@@ -254,29 +251,21 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>時間帯を追加</h2>
+        <h2 style={{ marginTop: 0 }}>時間帯</h2>
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 0 }}>
-          複数選んでまとめて追加できます。
+          チェックを入れるとその時間帯を使う設定になります。外すと削除されます。
         </p>
-        {availablePresets.length === 0 && (
-          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            3種類とも追加済みです。
-          </p>
-        )}
-        {availablePresets.map((l) => (
+        {presetLabels.map((l) => (
           <label key={l} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
-              checked={checkedPresets.includes(l)}
-              onChange={() => togglePreset(l)}
+              checked={round.timeSlots.some((t) => t.label === l)}
+              onChange={() => togglePresetSlot(l)}
               style={{ width: "auto" }}
             />
             {l}
           </label>
         ))}
-        {availablePresets.length > 0 && (
-          <button onClick={addTimeSlots}>選んだ時間帯を追加</button>
-        )}
       </div>
 
       <div className="card">
