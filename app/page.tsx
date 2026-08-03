@@ -8,7 +8,8 @@ type GarrisonMember = { participantId: number };
 type TimeSlot = {
   id: number;
   label: string;
-  garrisonLeaderId: number | null;
+  garrisonLeaderVbvId: number | null;
+  garrisonLeaderCbsId: number | null;
   garrisonMembers: GarrisonMember[];
 };
 type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
@@ -167,15 +168,15 @@ export default function Home() {
               ).length;
               const vbvMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "vbv"),
-                t.garrisonLeaderId
+                t.garrisonLeaderVbvId
               );
               const cbsMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "cbs"),
-                t.garrisonLeaderId
+                t.garrisonLeaderCbsId
               );
               const otherMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
-                t.garrisonLeaderId
+                null
               );
 
               return (
@@ -206,7 +207,7 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isLeader={p.id === t.garrisonLeaderId}
+                            isLeader={p.id === t.garrisonLeaderVbvId}
                           />
                         ))}
                       </div>
@@ -221,7 +222,7 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isLeader={p.id === t.garrisonLeaderId}
+                            isLeader={p.id === t.garrisonLeaderCbsId}
                           />
                         ))}
                       </div>
@@ -234,7 +235,7 @@ export default function Home() {
                         未設定({otherMembers.length}人)
                       </div>
                       {otherMembers.map((p) => (
-                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
+                        <ParticipantLine p={p} key={p.id} isLeader={false} />
                       ))}
                     </div>
                   )}
