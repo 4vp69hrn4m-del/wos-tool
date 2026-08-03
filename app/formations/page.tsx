@@ -16,6 +16,7 @@ type Formation = {
   infantryPct: number | null;
   cavalryPct: number | null;
   archerPct: number | null;
+  troopCount: number | null;
   equipmentNote: string | null;
   createdAt: string;
 };
@@ -36,11 +37,69 @@ const emptyForm = {
   infantryPct: "",
   cavalryPct: "",
   archerPct: "",
+  troopCount: "",
   equipmentNote: "",
 };
 
+const statCols = [
+  ["atk", "攻撃力"],
+  ["def", "防御力"],
+  ["lethality", "殺傷力"],
+  ["hp", "HP"],
+] as const;
+
+const troopRows = [
+  ["shield", "盾兵"],
+  ["spear", "槍兵"],
+  ["bow", "弓兵"],
+] as const;
+
+function StatGrid({
+  values,
+  onChange,
+}: {
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+}) {
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: "left", padding: 4 }}></th>
+            {statCols.map(([key, label]) => (
+              <th key={key} style={{ padding: 4 }}>
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {troopRows.map(([troopKey, troopLabel]) => (
+            <tr key={troopKey}>
+              <td style={{ padding: 4, color: "#94a3b8" }}>{troopLabel}</td>
+              {statCols.map(([statKey]) => (
+                <td key={statKey} style={{ padding: 2 }}>
+                  <input
+                    value={values[`${troopKey}_${statKey}`] || ""}
+                    onChange={(e) => onChange(`${troopKey}_${statKey}`, e.target.value)}
+                    style={{ width: "100%", padding: "4px 6px" }}
+                    placeholder="0"
+                  />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function FormationsPage() {
   const [form, setForm] = useState(emptyForm);
+  const [equipStats, setEquipStats] = useState<Record<string, string>>({});
+  const [gemStats, setGemStats] = useState<Record<string, string>>({});
   const [list, setList] = useState<Formation[]>([]);
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [experts, setExperts] = useState<Expert[]>([]);
@@ -71,12 +130,25 @@ export default function FormationsPage() {
   async function submit() {
     setLoading(true);
     try {
+      const body: Record<string, unknown> = { ...form };
+      for (const [troopKey] of troopRows) {
+        for (const [statKey] of statCols) {
+          const k = `${troopKey}_${statKey}`;
+          const capKey = statKey.charAt(0).toUpperCase() + statKey.slice(1);
+          const troopCapKey = troopKey.charAt(0).toUpperCase() + troopKey.slice(1);
+          body[`equip${troopCapKey}${capKey}Pct`] = equipStats[k] || "";
+          body[`gem${troopCapKey}${capKey}Pct`] = gemStats[k] || "";
+        }
+      }
+
       await fetch("/api/formations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       setForm(emptyForm);
+      setEquipStats({});
+      setGemStats({});
       await loadAll();
     } finally {
       setLoading(false);
@@ -202,7 +274,26 @@ export default function FormationsPage() {
           </div>
         </div>
 
-        <label>装備メモ(自由記述・後で構造化予定)</label>
+        <label>兵士数</label>
+        <input value={form.troopCount} onChange={(e) => update("troopCount", e.target.value)} />
+
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+          領主装備(%・任意)
+        </p>
+        <StatGrid
+          values={equipStats}
+          onChange={(k, v) => setEquipStats((prev) => ({ ...prev, [k]: v }))}
+        />
+
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+          領主宝石(%・任意)
+        </p>
+        <StatGrid
+          values={gemStats}
+          onChange={(k, v) => setGemStats((prev) => ({ ...prev, [k]: v }))}
+        />
+
+        <label style={{ marginTop: 16 }}>装備メモ(自由記述・後で構造化予定)</label>
         <input
           value={form.equipmentNote}
           onChange={(e) => update("equipmentNote", e.target.value)}
@@ -236,7 +327,7 @@ export default function FormationsPage() {
             </div>
             <div>
               兵種割合: 歩{f.infantryPct ?? "-"}% 騎{f.cavalryPct ?? "-"}% 弓
-              {f.archerPct ?? "-"}%
+              {f.archerPct ?? "-"}% / 兵士数: {f.troopCount ?? "-"}
             </div>
             {f.equipmentNote && <div>装備メモ: {f.equipmentNote}</div>}
           </div>
