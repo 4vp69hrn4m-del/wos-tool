@@ -10,8 +10,8 @@ type Card = {
   yukihyoLevel: string; // "" (なし) or "1"〜"8"
 };
 
-const CASTLE_X = 597;
-const CASTLE_Y = 597;
+const CASTLE_X = 599;
+const CASTLE_Y = 599;
 
 const yukihyoBonusPct: Record<string, number> = {
   "1": 15,
@@ -55,7 +55,7 @@ function marchSeconds(card: Card, baseSpeed: number): number | null {
 
 export default function TimerPage() {
   const [now, setNow] = useState(new Date());
-  const [baseSpeed, setBaseSpeed] = useState("0.15");
+  const [baseSpeed, setBaseSpeed] = useState("0.205");
   const [cards, setCards] = useState<Card[]>([newCard()]);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function TimerPage() {
         現在時刻: {nowTimeString(now)}
       </p>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        王城座標: ({CASTLE_X}, {CASTLE_Y})。行軍速度は仮の値なので、実際の表示と見比べて下の「基本行軍速度」を調整してください。
+        王城座標: ({CASTLE_X}, {CASTLE_Y})。行軍速度は実データから較正した値です(誤差は数秒程度出ることがあります。ズレる場合は下の「基本行軍速度」を微調整してください)。
       </p>
 
       <div className="card">
