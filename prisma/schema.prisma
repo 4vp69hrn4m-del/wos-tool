@@ -169,3 +169,11 @@ model SvsGarrisonMember {
   participant   SvsParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   createdAt     DateTime       @default(now())
 }
+
+// トップページのお知らせ掲示板(誰でも書き込み・削除可能)
+model Announcement {
+  id         Int      @id @default(autoincrement())
+  message    String
+  authorName String?
+  createdAt  DateTime @default(now())
+}
