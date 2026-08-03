@@ -280,25 +280,27 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>参加者登録</h2>
-        <label>名前</label>
+        <h2 style={{ marginTop: 0 }}>参加者登録 / Register</h2>
+        <label>名前 / Name</label>
         <input value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
 
-        <label>所属同盟(実際に入っている同盟名)</label>
+        <label>所属同盟(実際に入っている同盟名) / Home Alliance (your real alliance)</label>
         <input value={homeAlliance} onChange={(e) => setHomeAlliance(e.target.value)} />
 
-        <label>参加希望同盟(今回のSVSでvbv/cbsどちらとして参加するか)</label>
+        <label>
+          参加希望同盟(今回vbv/cbsどちらとして参加するか) / Alliance for this SVS (vbv or cbs)
+        </label>
         <select value={alliance} onChange={(e) => setAlliance(e.target.value)}>
           <option value="vbv">vbv</option>
           <option value="cbs">cbs</option>
         </select>
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 12, marginBottom: 4 }}>
-          参加可能な時間帯(複数選択可)
+          参加可能な時間帯(複数選択可) / Available time slots (select multiple)
         </p>
         {round.timeSlots.length === 0 && (
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            先に上で時間帯を追加してください。
+            先に上で時間帯を追加してください。 / Please add a time slot above first.
           </p>
         )}
         {sortedTimeSlots.map((t) => (
@@ -321,7 +323,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               onChange={(e) => setHasT12(e.target.checked)}
               style={{ width: "auto" }}
             />
-            T12兵士を持っている
+            T12兵士を持っている / I have T12 troops
           </label>
           <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
@@ -330,19 +332,19 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               onChange={(e) => setNoSleepRisk(e.target.checked)}
               style={{ width: "auto" }}
             />
-            寝落ちは考慮しないものとする
+            寝落ちは考慮しないものとする / I will not fall asleep
           </label>
         </div>
 
         {hasT12 && (
           <div className="row">
             <div>
-              <label>盾兵スキルLv</label>
+              <label>盾兵スキルLv / Shield skill Lv</label>
               <select
                 value={t12ShieldSkill}
                 onChange={(e) => setT12ShieldSkill(e.target.value)}
               >
-                <option value="">(未選択)</option>
+                <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -350,9 +352,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label>槍兵スキルLv</label>
+              <label>槍兵スキルLv / Spear skill Lv</label>
               <select value={t12SpearSkill} onChange={(e) => setT12SpearSkill(e.target.value)}>
-                <option value="">(未選択)</option>
+                <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -360,9 +362,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label>弓兵スキルLv</label>
+              <label>弓兵スキルLv / Bow skill Lv</label>
               <select value={t12BowSkill} onChange={(e) => setT12BowSkill(e.target.value)}>
-                <option value="">(未選択)</option>
+                <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -372,7 +374,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
           </div>
         )}
 
-        <button onClick={addParticipant}>参加者を登録</button>
+        <button onClick={addParticipant}>参加者を登録 / Register</button>
       </div>
 
       <h1>時間帯ごとの参加者・リーダー設定</h1>
