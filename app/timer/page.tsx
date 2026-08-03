@@ -1,212 +1,179 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
-type GarrisonMember = { participantId: number };
-type TimeSlot = {
-  id: number;
-  label: string;
-  garrisonLeaderId: number | null;
-  garrisonMembers: GarrisonMember[];
-};
-type ParticipantSlot = { timeSlotId: number; timeSlot: { id: number; label: string } };
-type Participant = {
-  id: number;
-  playerName: string;
-  homeAlliance: string | null;
-  alliance: string | null;
-  hasT12: boolean;
-  t12ShieldSkill: number | null;
-  t12SpearSkill: number | null;
-  t12BowSkill: number | null;
-  timeSlots: ParticipantSlot[];
-};
-type SvsRound = {
-  id: number;
-  roundName: string;
-  status: string | null;
-  timeSlots: TimeSlot[];
-  participants: Participant[];
+type Card = {
+  id: string;
+  name: string;
+  x: string;
+  y: string;
+  yukihyoLevel: string; // "" (なし) or "1"〜"8"
 };
 
-const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
+const CASTLE_X = 599;
+const CASTLE_Y = 599;
 
-function sortBySkill(members: Participant[]) {
-  return [...members].sort(
-    (a, b) =>
-      (b.t12ShieldSkill ?? 0) +
-      (b.t12SpearSkill ?? 0) +
-      (b.t12BowSkill ?? 0) -
-      ((a.t12ShieldSkill ?? 0) + (a.t12SpearSkill ?? 0) + (a.t12BowSkill ?? 0))
-  );
+const yukihyoBonusPct: Record<string, number> = {
+  "1": 15,
+  "2": 17,
+  "3": 19,
+  "4": 21,
+  "5": 23,
+  "6": 25,
+  "7": 27,
+  "8": 30,
+};
+
+function newCard(): Card {
+  return {
+    id: Math.random().toString(36).slice(2),
+    name: "",
+    x: "",
+    y: "",
+    yukihyoLevel: "",
+  };
 }
 
-function orderWithLeaderFirst(members: Participant[], leaderId: number | null) {
-  const leader = members.find((m) => m.id === leaderId);
-  const rest = sortBySkill(members.filter((m) => m.id !== leaderId));
-  return leader ? [leader, ...rest] : rest;
+function nowTimeString(d: Date) {
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  const ss = String(d.getSeconds()).padStart(2, "0");
+  return `${hh}:${mm}:${ss}`;
 }
 
-function ParticipantLine({ p, isLeader }: { p: Participant; isLeader?: boolean }) {
-  return (
-    <div style={{ fontSize: "0.9rem", marginTop: 6 }}>
-      ・{p.playerName}
-      {isLeader && (
-        <span style={{ color: "#38bdf8", fontSize: "0.75rem", fontWeight: 600 }}>
-          {" "}
-          駐屯リーダー
-        </span>
-      )}
-      {p.homeAlliance && (
-        <span style={{ color: "#94a3b8" }}> [{p.homeAlliance}]</span>
-      )}{" "}
-      {p.hasT12
-        ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${p.t12BowSkill ?? "-"}`
-        : "T12なし"}
-    </div>
-  );
+function marchSeconds(card: Card, baseSpeed: number, prepSeconds: number): number | null {
+  const x = Number(card.x);
+  const y = Number(card.y);
+  if (card.x === "" || card.y === "" || Number.isNaN(x) || Number.isNaN(y) || !baseSpeed) {
+    return null;
+  }
+  const dist = Math.sqrt((x - CASTLE_X) ** 2 + (y - CASTLE_Y) ** 2);
+  const bonusPct = yukihyoBonusPct[card.yukihyoLevel] || 0;
+  const finalSpeed = baseSpeed * (1 + bonusPct / 100);
+  return Math.round(dist / finalSpeed + prepSeconds);
 }
 
-export default function Home() {
-  const [latestRound, setLatestRound] = useState<SvsRound | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function TimerPage() {
+  const [now, setNow] = useState(new Date());
+  const [baseSpeed, setBaseSpeed] = useState("0.236");
+  const [prepSeconds, setPrepSeconds] = useState("6.65");
+  const [cards, setCards] = useState<Card[]>([newCard()]);
 
   useEffect(() => {
-    async function load() {
-      const list = await fetch("/api/svs-rounds").then((r) => r.json());
-      if (list.length === 0) {
-        setLoading(false);
-        return;
-      }
-      const detail = await fetch(`/api/svs-rounds/${list[0].id}`).then((r) => r.json());
-      setLatestRound(detail);
-      setLoading(false);
-    }
-    load();
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
+
+  function addCard() {
+    setCards((prev) => [...prev, newCard()]);
+  }
+
+  function updateCard(id: string, patch: Partial<Card>) {
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }
+
+  function deleteCard(id: string) {
+    setCards((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  function sortByArrival() {
+    setCards((prev) =>
+      [...prev].sort((a, b) => {
+        const aSec = marchSeconds(a, Number(baseSpeed), Number(prepSeconds)) ?? Infinity;
+        const bSec = marchSeconds(b, Number(baseSpeed), Number(prepSeconds)) ?? Infinity;
+        return aSec - bSec;
+      })
+    );
+  }
 
   return (
     <div>
-      <h1>WOS 編成分析ツール(vbv.cbs.ONK専用)</h1>
+      <h1>WOS 王城着弾時刻計算</h1>
+      <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+        現在時刻: {nowTimeString(now)}
+      </p>
+      <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+        王城座標: ({CASTLE_X}, {CASTLE_Y})。行軍速度・固定準備時間は実データから較正した値です(誤差は0.5秒以内)。ズレる場合は下の数値を微調整してください。
+      </p>
+
       <div className="card">
-        <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
-        <p>
-          <Link href="/formations">→ 編成を登録する / 一覧を見る(作成中)</Link>
-        </p>
-        <p>
-          <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理(作成中)</Link>
-        </p>
-        <p>
-          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
-        </p>
-        <p>
-          <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
-        </p>
-        <p>
-          <Link href="/timer">→ 王城着弾時刻計算</Link>
-        </p>
+        <label>基本行軍速度(マス/秒・要調整)</label>
+        <input value={baseSpeed} onChange={(e) => setBaseSpeed(e.target.value)} />
+        <label>固定準備時間(秒・距離に関係なく一律でかかる時間)</label>
+        <input value={prepSeconds} onChange={(e) => setPrepSeconds(e.target.value)} />
       </div>
 
-      {!loading && latestRound && (
-        <>
-          <h1>
-            直近の開催回: {latestRound.roundName}{" "}
-            <Link href={`/svs/${latestRound.id}`} style={{ fontSize: "0.8rem" }}>
-              (詳細を開く)
-            </Link>
-          </h1>
-          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            ↓駐屯メンバー(Garrison Members)
-          </p>
-          {[...latestRound.timeSlots]
-            .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
-            .map((t) => {
-              const garrisonIds = t.garrisonMembers.map((g) => g.participantId);
-              const inSlot = latestRound.participants.filter((p) =>
-                garrisonIds.includes(p.id)
-              );
-              const totalAvailable = latestRound.participants.filter((p) =>
-                p.timeSlots.some((ps) => ps.timeSlotId === t.id)
-              ).length;
-              const vbvMembers = orderWithLeaderFirst(
-                inSlot.filter((p) => p.alliance === "vbv"),
-                t.garrisonLeaderId
-              );
-              const cbsMembers = orderWithLeaderFirst(
-                inSlot.filter((p) => p.alliance === "cbs"),
-                t.garrisonLeaderId
-              );
-              const otherMembers = orderWithLeaderFirst(
-                inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
-                t.garrisonLeaderId
-              );
+      <div className="card">
+        <button onClick={addCard}>＋カード追加</button>
+        <button onClick={sortByArrival} style={{ marginLeft: 8 }}>
+          行軍時間順ソート
+        </button>
+      </div>
 
-              return (
-                <div className="card" key={t.id}>
-                  <strong>
-                    {t.label}({totalAvailable}人)
-                  </strong>
-                  {inSlot.length === 0 && (
-                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-                      まだ駐屯メンバーが選ばれていません。
-                    </p>
-                  )}
+      {cards.map((c) => {
+        const sec = marchSeconds(c, Number(baseSpeed), Number(prepSeconds));
+        return (
+          <div className="card" key={c.id}>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
+              <div style={{ display: "flex", gap: 8, flex: 1 }}>
+                <input
+                  value={c.name}
+                  onChange={(e) => updateCard(c.id, { name: e.target.value })}
+                  placeholder="名前"
+                  style={{ flex: 2 }}
+                />
+                <span style={{ alignSelf: "center", fontSize: "0.85rem" }}>X:</span>
+                <input
+                  value={c.x}
+                  onChange={(e) => updateCard(c.id, { x: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ alignSelf: "center", fontSize: "0.85rem" }}>Y:</span>
+                <input
+                  value={c.y}
+                  onChange={(e) => updateCard(c.id, { y: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+              </div>
+              <button
+                onClick={() => deleteCard(c.id)}
+                style={{
+                  marginLeft: 8,
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#7f1d1d",
+                  color: "#fecaca",
+                }}
+              >
+                削除
+              </button>
+            </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      columnGap: 12,
-                      marginTop: 8,
-                    }}
-                  >
-                    {vbvMembers.length > 0 && (
-                      <div>
-                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
-                          vbv({vbvMembers.length}人)
-                        </div>
-                        {vbvMembers.map((p) => (
-                          <ParticipantLine
-                            p={p}
-                            key={p.id}
-                            isLeader={p.id === t.garrisonLeaderId}
-                          />
-                        ))}
-                      </div>
-                    )}
+            <label>ユキヒョウ</label>
+            <select
+              value={c.yukihyoLevel}
+              onChange={(e) => updateCard(c.id, { yukihyoLevel: e.target.value })}
+            >
+              <option value="">なし</option>
+              {Object.entries(yukihyoBonusPct).map(([lvl, pct]) => (
+                <option key={lvl} value={lvl}>
+                  Lv{lvl}:+{pct}%
+                </option>
+              ))}
+            </select>
 
-                    {cbsMembers.length > 0 && (
-                      <div>
-                        <div style={{ color: "#38bdf8", fontSize: "0.8rem", fontWeight: 600 }}>
-                          cbs({cbsMembers.length}人)
-                        </div>
-                        {cbsMembers.map((p) => (
-                          <ParticipantLine
-                            p={p}
-                            key={p.id}
-                            isLeader={p.id === t.garrisonLeaderId}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+            <div style={{ marginTop: 12 }}>
+              行軍時間: <strong>{sec !== null ? `${sec} 秒` : "-"}</strong>
+            </div>
+          </div>
+        );
+      })}
 
-                  {otherMembers.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ color: "#94a3b8", fontSize: "0.8rem", fontWeight: 600 }}>
-                        未設定({otherMembers.length}人)
-                      </div>
-                      {otherMembers.map((p) => (
-                        <ParticipantLine p={p} key={p.id} isLeader={p.id === t.garrisonLeaderId} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-        </>
-      )}
+      <div className="card">
+        <button onClick={addCard}>＋カード追加</button>
+      </div>
     </div>
   );
 }
