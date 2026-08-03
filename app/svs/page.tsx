@@ -47,7 +47,6 @@ export default function SvsListPage() {
   }
 
   async function deleteRound(id: number, name: string) {
-    alert("テスト: ボタンは反応しています(id=" + id + ")");
     if (!confirm(`「${name}」を削除しますか?(中の時間帯も全て消えます)`)) return;
     const res = await adminFetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
     if (!res) return;
