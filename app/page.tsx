@@ -89,7 +89,19 @@ export default function Home() {
   return (
     <div>
       <h1>WOS 編成分析ツール(vbv.cbs.ONK専用)</h1>
+
       <div className="card">
+        <h2 style={{ marginTop: 0 }}>SVS用</h2>
+        <p>
+          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
+        </p>
+        <p>
+          <Link href="/timer">→ 王城着弾時刻計算</Link>
+        </p>
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>編成・シミュレーター用</h2>
         <p>自分と相手の編成を登録して、あとで比較・分析できるようにします。</p>
         <p>
           <Link href="/formations">→ 編成を登録する / 一覧を見る(作成中)</Link>
@@ -98,13 +110,7 @@ export default function Home() {
           <Link href="/master">→ 英雄・専門家・ペットのマスターデータ管理(作成中)</Link>
         </p>
         <p>
-          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
-        </p>
-        <p>
           <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
-        </p>
-        <p>
-          <Link href="/timer">→ 王城着弾時刻計算</Link>
         </p>
       </div>
 
