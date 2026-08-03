@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkAdminAuth } from "@/lib/adminAuth";
 
 export async function GET() {
   const rounds = await prisma.svsRound.findMany({
@@ -12,6 +13,9 @@ export async function GET() {
 const PRESET_TIME_SLOTS = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
 
 export async function POST(req: NextRequest) {
+  const authError = checkAdminAuth(req);
+  if (authError) return authError;
+
   const body = await req.json();
 
   if (!body.roundName) {
