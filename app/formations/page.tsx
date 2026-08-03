@@ -83,6 +83,12 @@ export default function FormationsPage() {
     }
   }
 
+  async function deleteFormation(id: number, label: string | null) {
+    if (!confirm(`「${label || "この編成"}」を削除しますか?`)) return;
+    await fetch(`/api/formations/${id}`, { method: "DELETE" });
+    await loadAll();
+  }
+
   const shieldHeroes = heroes.filter((h) => h.troopType === "歩兵");
   const spearHeroes = heroes.filter((h) => h.troopType === "騎兵");
   const bowHeroes = heroes.filter((h) => h.troopType === "弓兵");
@@ -210,21 +216,42 @@ export default function FormationsPage() {
       <h1>登録済みの編成</h1>
       {list.length === 0 && <p>まだ登録がありません。</p>}
       {list.map((f) => (
-        <div className="card" key={f.id}>
-          <strong>{f.label || "(名前なし)"}</strong>
+        <div
+          className="card"
+          key={f.id}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
+        >
           <div>
-            {f.side === "self" ? "自分" : "相手"} / {f.formationType === "attack" ? "攻撃" : "防衛"}
+            <strong>{f.label || "(名前なし)"}</strong>
+            <div>
+              {f.side === "self" ? "自分" : "相手"} /{" "}
+              {f.formationType === "attack" ? "攻撃" : "防衛"}
+            </div>
+            <div>
+              盾: {f.shieldHeroName || "-"} / 槍: {f.spearHeroName || "-"} / 弓:{" "}
+              {f.bowHeroName || "-"}
+            </div>
+            <div>
+              専門家: {f.expertName || "-"} / ペット: {f.petName || "-"}
+            </div>
+            <div>
+              兵種割合: 歩{f.infantryPct ?? "-"}% 騎{f.cavalryPct ?? "-"}% 弓
+              {f.archerPct ?? "-"}%
+            </div>
+            {f.equipmentNote && <div>装備メモ: {f.equipmentNote}</div>}
           </div>
-          <div>
-            盾: {f.shieldHeroName || "-"} / 槍: {f.spearHeroName || "-"} / 弓: {f.bowHeroName || "-"}
-          </div>
-          <div>
-            専門家: {f.expertName || "-"} / ペット: {f.petName || "-"}
-          </div>
-          <div>
-            兵種割合: 歩{f.infantryPct ?? "-"}% 騎{f.cavalryPct ?? "-"}% 弓{f.archerPct ?? "-"}%
-          </div>
-          {f.equipmentNote && <div>装備メモ: {f.equipmentNote}</div>}
+          <button
+            onClick={() => deleteFormation(f.id, f.label)}
+            style={{
+              padding: "4px 10px",
+              fontSize: "0.8rem",
+              background: "#7f1d1d",
+              color: "#fecaca",
+              flexShrink: 0,
+            }}
+          >
+            削除
+          </button>
         </div>
       ))}
     </div>
