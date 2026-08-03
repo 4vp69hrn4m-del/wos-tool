@@ -41,7 +41,7 @@ function nowTimeString(d: Date) {
   return `${hh}:${mm}:${ss}`;
 }
 
-function marchSeconds(card: Card, baseSpeed: number): number | null {
+function marchSeconds(card: Card, baseSpeed: number, prepSeconds: number): number | null {
   const x = Number(card.x);
   const y = Number(card.y);
   if (card.x === "" || card.y === "" || Number.isNaN(x) || Number.isNaN(y) || !baseSpeed) {
@@ -50,12 +50,13 @@ function marchSeconds(card: Card, baseSpeed: number): number | null {
   const dist = Math.sqrt((x - CASTLE_X) ** 2 + (y - CASTLE_Y) ** 2);
   const bonusPct = yukihyoBonusPct[card.yukihyoLevel] || 0;
   const finalSpeed = baseSpeed * (1 + bonusPct / 100);
-  return Math.ceil(dist / finalSpeed);
+  return Math.round(dist / finalSpeed + prepSeconds);
 }
 
 export default function TimerPage() {
   const [now, setNow] = useState(new Date());
-  const [baseSpeed, setBaseSpeed] = useState("0.205");
+  const [baseSpeed, setBaseSpeed] = useState("0.236");
+  const [prepSeconds, setPrepSeconds] = useState("6.65");
   const [cards, setCards] = useState<Card[]>([newCard()]);
 
   useEffect(() => {
@@ -78,8 +79,8 @@ export default function TimerPage() {
   function sortByArrival() {
     setCards((prev) =>
       [...prev].sort((a, b) => {
-        const aSec = marchSeconds(a, Number(baseSpeed)) ?? Infinity;
-        const bSec = marchSeconds(b, Number(baseSpeed)) ?? Infinity;
+        const aSec = marchSeconds(a, Number(baseSpeed), Number(prepSeconds)) ?? Infinity;
+        const bSec = marchSeconds(b, Number(baseSpeed), Number(prepSeconds)) ?? Infinity;
         return aSec - bSec;
       })
     );
@@ -92,12 +93,14 @@ export default function TimerPage() {
         現在時刻: {nowTimeString(now)}
       </p>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        王城座標: ({CASTLE_X}, {CASTLE_Y})。行軍速度は実データから較正した値です(誤差は数秒程度出ることがあります。ズレる場合は下の「基本行軍速度」を微調整してください)。
+        王城座標: ({CASTLE_X}, {CASTLE_Y})。行軍速度・固定準備時間は実データから較正した値です(誤差は0.5秒以内)。ズレる場合は下の数値を微調整してください。
       </p>
 
       <div className="card">
         <label>基本行軍速度(マス/秒・要調整)</label>
         <input value={baseSpeed} onChange={(e) => setBaseSpeed(e.target.value)} />
+        <label>固定準備時間(秒・距離に関係なく一律でかかる時間)</label>
+        <input value={prepSeconds} onChange={(e) => setPrepSeconds(e.target.value)} />
       </div>
 
       <div className="card">
@@ -108,7 +111,7 @@ export default function TimerPage() {
       </div>
 
       {cards.map((c) => {
-        const sec = marchSeconds(c, Number(baseSpeed));
+        const sec = marchSeconds(c, Number(baseSpeed), Number(prepSeconds));
         return (
           <div className="card" key={c.id}>
             <div
