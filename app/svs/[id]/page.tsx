@@ -94,26 +94,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     load();
   }, []);
 
-  async function togglePresetSlot(label: string) {
-    const existing = round?.timeSlots.find((t) => t.label === label);
-    if (existing) {
-      if (
-        !confirm(
-          `「${label}」を削除しますか?(この時間帯のリーダー・駐屯メンバー設定も消えます)`
-        )
-      )
-        return;
-      await fetch(`/api/svs-time-slots/${existing.id}`, { method: "DELETE" });
-    } else {
-      await fetch(`/api/svs-rounds/${params.id}/time-slots`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label }),
-      });
-    }
-    await load();
-  }
-
   async function deleteTimeSlot(id: number, l: string) {
     if (!confirm(`「${l}」を削除しますか?`)) return;
     await fetch(`/api/svs-time-slots/${id}`, { method: "DELETE" });
@@ -248,24 +228,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         </select>
 
         <button onClick={saveStatusAndResult}>状態・勝敗を保存</button>
-      </div>
-
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>時間帯</h2>
-        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 0 }}>
-          チェックを入れるとその時間帯を使う設定になります。外すと削除されます。
-        </p>
-        {presetLabels.map((l) => (
-          <label key={l} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={round.timeSlots.some((t) => t.label === l)}
-              onChange={() => togglePresetSlot(l)}
-              style={{ width: "auto" }}
-            />
-            {l}
-          </label>
-        ))}
       </div>
 
       <div className="card">
