@@ -134,6 +134,9 @@ export default function Home() {
             → ギフトコード自動受け取り
           </a>
         </p>
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+          ユーザーはギフトが欲しいアカウントのプレイヤーIDを入力するだけ(スペースを入れることで複数可)で、有効なギフトコードを一度に自動で受け取ることができます。
+        </p>
       </div>
 
       {!loading && latestRound && (
