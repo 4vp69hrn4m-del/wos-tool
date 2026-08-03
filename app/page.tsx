@@ -49,10 +49,19 @@ function sortBySkill(members: Participant[]) {
   );
 }
 
-function orderWithLeaderFirst(members: Participant[], leaderIds: Set<number>) {
-  const leaders = sortBySkill(members.filter((m) => leaderIds.has(m.id)));
-  const rest = sortBySkill(members.filter((m) => !leaderIds.has(m.id)));
-  return [...leaders, ...rest];
+function orderWithLeaderFirst(
+  members: Participant[],
+  garrisonLeaderId: number | null,
+  rallyLeaderIds: Set<number>
+) {
+  const garrisonLeader = members.find((m) => m.id === garrisonLeaderId);
+  const rallyOnly = sortBySkill(
+    members.filter((m) => m.id !== garrisonLeaderId && rallyLeaderIds.has(m.id))
+  );
+  const rest = sortBySkill(
+    members.filter((m) => m.id !== garrisonLeaderId && !rallyLeaderIds.has(m.id))
+  );
+  return garrisonLeader ? [garrisonLeader, ...rallyOnly, ...rest] : [...rallyOnly, ...rest];
 }
 
 function ParticipantLine({
@@ -207,21 +216,20 @@ export default function Home() {
                 p.timeSlots.some((ps) => ps.timeSlotId === t.id)
               ).length;
               const rallyLeaderIds = new Set(t.rallyLeaders.map((r) => r.participantId));
-              const vbvLeaderIds = new Set(rallyLeaderIds);
-              if (t.garrisonLeaderVbvId !== null) vbvLeaderIds.add(t.garrisonLeaderVbvId);
-              const cbsLeaderIds = new Set(rallyLeaderIds);
-              if (t.garrisonLeaderCbsId !== null) cbsLeaderIds.add(t.garrisonLeaderCbsId);
 
               const vbvMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "vbv"),
-                vbvLeaderIds
+                t.garrisonLeaderVbvId,
+                rallyLeaderIds
               );
               const cbsMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "cbs"),
-                cbsLeaderIds
+                t.garrisonLeaderCbsId,
+                rallyLeaderIds
               );
               const otherMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
+                null,
                 rallyLeaderIds
               );
               const rallyLeaderOf = (pid: number) =>
@@ -247,7 +255,7 @@ export default function Home() {
                     }}
                   >
                     {vbvMembers.length > 0 && (
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div
                           style={{
                             color: ALLIANCE_COLOR,
@@ -274,7 +282,7 @@ export default function Home() {
                     )}
 
                     {cbsMembers.length > 0 && (
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div
                           style={{
                             color: ALLIANCE_COLOR,
