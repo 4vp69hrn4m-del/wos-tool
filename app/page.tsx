@@ -10,7 +10,9 @@ type TimeSlot = {
   id: number;
   label: string;
   garrisonLeaderVbvId: number | null;
+  garrisonLeaderVbvUsePet: boolean;
   garrisonLeaderCbsId: number | null;
+  garrisonLeaderCbsUsePet: boolean;
   garrisonMembers: GarrisonMember[];
   rallyLeaders: RallyLeader[];
 };
@@ -47,57 +49,63 @@ function sortBySkill(members: Participant[]) {
   );
 }
 
-function orderWithLeaderFirst(members: Participant[], leaderId: number | null) {
-  const leader = members.find((m) => m.id === leaderId);
-  const rest = sortBySkill(members.filter((m) => m.id !== leaderId));
-  return leader ? [leader, ...rest] : rest;
+function orderWithLeaderFirst(members: Participant[], leaderIds: Set<number>) {
+  const leaders = sortBySkill(members.filter((m) => leaderIds.has(m.id)));
+  const rest = sortBySkill(members.filter((m) => !leaderIds.has(m.id)));
+  return [...leaders, ...rest];
 }
 
 function ParticipantLine({
   p,
-  isGarrisonLeader,
+  garrisonLeaderUsePet,
   rallyLeader,
 }: {
   p: Participant;
-  isGarrisonLeader?: boolean;
+  garrisonLeaderUsePet?: boolean | null;
   rallyLeader?: RallyLeader | null;
 }) {
   return (
-    <div style={{ fontSize: "0.9rem", marginTop: 6 }}>
-      <span style={{ fontWeight: 600 }}>・{p.playerName}</span>
-      <div style={{ marginTop: 2 }}>
-        {isGarrisonLeader && (
-          <span
-            style={{
-              color: "#38bdf8",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              marginRight: 8,
-            }}
-          >
-            駐屯リーダー
-          </span>
-        )}
-        {rallyLeader && (
-          <span
-            style={{
-              color: "#f87171",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              marginRight: 8,
-            }}
-          >
-            集結リーダー{rallyLeader.usePet ? "🐱" : ""}
-          </span>
-        )}
-        <span style={{ color: "#cbd5e1" }}>
-          {p.hasT12
-            ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
-                p.t12BowSkill ?? "-"
-              }`
-            : "T12なし"}
+    <div
+      style={{
+        fontSize: "0.85rem",
+        marginTop: 3,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+      }}
+    >
+      <span style={{ fontWeight: 600 }}>・{p.playerName}</span>{" "}
+      {garrisonLeaderUsePet !== null && garrisonLeaderUsePet !== undefined && (
+        <span
+          style={{
+            color: "#38bdf8",
+            fontSize: "0.7rem",
+            fontWeight: 600,
+            marginRight: 4,
+          }}
+        >
+          駐屯{garrisonLeaderUsePet ? "🐱" : ""}
         </span>
-      </div>
+      )}
+      {rallyLeader && (
+        <span
+          style={{
+            color: "#f87171",
+            fontSize: "0.7rem",
+            fontWeight: 600,
+            marginRight: 4,
+          }}
+        >
+          集結{rallyLeader.usePet ? "🐱" : ""}
+        </span>
+      )}
+      <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+        {p.hasT12
+          ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+              p.t12BowSkill ?? "-"
+            }`
+          : "T12なし"}
+      </span>
     </div>
   );
 }
@@ -186,7 +194,7 @@ export default function Home() {
             </button>
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            ↓駐屯メンバー(Garrison Members)
+            ↓駐屯メンバー(Garrison Members) ・ 🐱がついている人はペットを使用してください
           </p>
           {[...latestRound.timeSlots]
             .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
@@ -198,17 +206,23 @@ export default function Home() {
               const totalAvailable = latestRound.participants.filter((p) =>
                 p.timeSlots.some((ps) => ps.timeSlotId === t.id)
               ).length;
+              const rallyLeaderIds = new Set(t.rallyLeaders.map((r) => r.participantId));
+              const vbvLeaderIds = new Set(rallyLeaderIds);
+              if (t.garrisonLeaderVbvId !== null) vbvLeaderIds.add(t.garrisonLeaderVbvId);
+              const cbsLeaderIds = new Set(rallyLeaderIds);
+              if (t.garrisonLeaderCbsId !== null) cbsLeaderIds.add(t.garrisonLeaderCbsId);
+
               const vbvMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "vbv"),
-                t.garrisonLeaderVbvId
+                vbvLeaderIds
               );
               const cbsMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance === "cbs"),
-                t.garrisonLeaderCbsId
+                cbsLeaderIds
               );
               const otherMembers = orderWithLeaderFirst(
                 inSlot.filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs"),
-                null
+                rallyLeaderIds
               );
               const rallyLeaderOf = (pid: number) =>
                 t.rallyLeaders.find((r) => r.participantId === pid) || null;
@@ -250,7 +264,9 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isGarrisonLeader={p.id === t.garrisonLeaderVbvId}
+                            garrisonLeaderUsePet={
+                              p.id === t.garrisonLeaderVbvId ? t.garrisonLeaderVbvUsePet : null
+                            }
                             rallyLeader={rallyLeaderOf(p.id)}
                           />
                         ))}
@@ -275,7 +291,9 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
-                            isGarrisonLeader={p.id === t.garrisonLeaderCbsId}
+                            garrisonLeaderUsePet={
+                              p.id === t.garrisonLeaderCbsId ? t.garrisonLeaderCbsUsePet : null
+                            }
                             rallyLeader={rallyLeaderOf(p.id)}
                           />
                         ))}
