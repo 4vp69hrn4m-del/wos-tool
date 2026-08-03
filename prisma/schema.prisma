@@ -75,31 +75,19 @@ model Formation {
 
   troopCount Int? // 兵士数
 
-  // 領主装備(%) - 兵種ごとの攻撃力・防御力・殺傷力・HP
-  equipShieldAtkPct       Int?
-  equipShieldDefPct       Int?
-  equipShieldLethalityPct Int?
-  equipShieldHpPct        Int?
-  equipSpearAtkPct        Int?
-  equipSpearDefPct        Int?
-  equipSpearLethalityPct  Int?
-  equipSpearHpPct         Int?
-  equipBowAtkPct          Int?
-  equipBowDefPct          Int?
-  equipBowLethalityPct    Int?
-  equipBowHpPct           Int?
+  // 領主装備(%) - 兵種ごとの攻撃力・防御力のみ(装備は攻撃力・防御力にしか効果がない)
+  equipShieldAtkPct Int?
+  equipShieldDefPct Int?
+  equipSpearAtkPct  Int?
+  equipSpearDefPct  Int?
+  equipBowAtkPct    Int?
+  equipBowDefPct    Int?
 
-  // 領主宝石(%) - 兵種ごとの攻撃力・防御力・殺傷力・HP
-  gemShieldAtkPct       Int?
-  gemShieldDefPct       Int?
+  // 領主宝石(%) - 兵種ごとの殺傷力・HPのみ(宝石は殺傷力・HPにしか効果がない)
   gemShieldLethalityPct Int?
   gemShieldHpPct        Int?
-  gemSpearAtkPct        Int?
-  gemSpearDefPct        Int?
   gemSpearLethalityPct  Int?
   gemSpearHpPct         Int?
-  gemBowAtkPct          Int?
-  gemBowDefPct          Int?
   gemBowLethalityPct    Int?
   gemBowHpPct           Int?
 
