@@ -85,6 +85,9 @@ export default function TimerPage() {
   return (
     <div>
       <h1>WOS 王城着弾時刻計算</h1>
+      <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+        自分の座標と相手の座標を調べて、援軍が綺麗に入るようにしましょう。
+      </p>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
         現在時刻: {nowTimeString(now)}
       </p>
