@@ -73,6 +73,36 @@ model Formation {
   cavalryPct  Int?
   archerPct   Int?
 
+  troopCount Int? // 兵士数
+
+  // 領主装備(%) - 兵種ごとの攻撃力・防御力・殺傷力・HP
+  equipShieldAtkPct       Int?
+  equipShieldDefPct       Int?
+  equipShieldLethalityPct Int?
+  equipShieldHpPct        Int?
+  equipSpearAtkPct        Int?
+  equipSpearDefPct        Int?
+  equipSpearLethalityPct  Int?
+  equipSpearHpPct         Int?
+  equipBowAtkPct          Int?
+  equipBowDefPct          Int?
+  equipBowLethalityPct    Int?
+  equipBowHpPct           Int?
+
+  // 領主宝石(%) - 兵種ごとの攻撃力・防御力・殺傷力・HP
+  gemShieldAtkPct       Int?
+  gemShieldDefPct       Int?
+  gemShieldLethalityPct Int?
+  gemShieldHpPct        Int?
+  gemSpearAtkPct        Int?
+  gemSpearDefPct        Int?
+  gemSpearLethalityPct  Int?
+  gemSpearHpPct         Int?
+  gemBowAtkPct          Int?
+  gemBowDefPct          Int?
+  gemBowLethalityPct    Int?
+  gemBowHpPct           Int?
+
   // 装備などは後で構造化する。まずはJSON文字列で自由記述。
   equipmentNote String?
 
