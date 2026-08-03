@@ -131,28 +131,10 @@ export default function Home() {
 
       <div className="card">
         <h2 style={{ marginTop: 0 }}>お知らせ</h2>
-        <label>名前(任意)</label>
-        <input value={announceName} onChange={(e) => setAnnounceName(e.target.value)} />
-        <label>内容</label>
-        <textarea
-          value={announceMessage}
-          onChange={(e) => setAnnounceMessage(e.target.value)}
-          rows={3}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: "8px",
-            border: "1px solid #334155",
-            background: "#0f172a",
-            color: "#e2e8f0",
-            fontSize: "1rem",
-          }}
-        />
-        <button onClick={postAnnouncement}>投稿する</button>
 
-        <div style={{ marginTop: 16 }}>
+        <div>
           {announcements.length === 0 && (
-            <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>まだお知らせがありません。</p>
+            <p style={{ color: "#94a3b8", fontSize: "0.95rem" }}>まだお知らせがありません。</p>
           )}
           {announcements.map((a) => (
             <div
@@ -162,13 +144,13 @@ export default function Home() {
                 justifyContent: "space-between",
                 alignItems: "flex-start",
                 borderTop: "1px solid #334155",
-                paddingTop: 8,
-                marginTop: 8,
+                paddingTop: 10,
+                marginTop: 10,
               }}
             >
               <div>
-                <div style={{ whiteSpace: "pre-wrap" }}>{a.message}</div>
-                <div style={{ color: "#94a3b8", fontSize: "0.75rem", marginTop: 4 }}>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: "1.15rem" }}>{a.message}</div>
+                <div style={{ color: "#94a3b8", fontSize: "0.9rem", marginTop: 6 }}>
                   {a.authorName || "匿名"} ・ {new Date(a.createdAt).toLocaleString("ja-JP")}
                 </div>
               </div>
@@ -176,7 +158,7 @@ export default function Home() {
                 onClick={() => deleteAnnouncement(a.id)}
                 style={{
                   padding: "4px 10px",
-                  fontSize: "0.8rem",
+                  fontSize: "0.9rem",
                   background: "#7f1d1d",
                   color: "#fecaca",
                   flexShrink: 0,
@@ -186,6 +168,27 @@ export default function Home() {
               </button>
             </div>
           ))}
+        </div>
+
+        <div style={{ marginTop: 20, borderTop: "1px solid #334155", paddingTop: 16 }}>
+          <label>名前(任意)</label>
+          <input value={announceName} onChange={(e) => setAnnounceName(e.target.value)} />
+          <label>内容</label>
+          <textarea
+            value={announceMessage}
+            onChange={(e) => setAnnounceMessage(e.target.value)}
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              borderRadius: "8px",
+              border: "1px solid #334155",
+              background: "#0f172a",
+              color: "#e2e8f0",
+              fontSize: "1.1rem",
+            }}
+          />
+          <button onClick={postAnnouncement}>投稿する</button>
         </div>
       </div>
 
