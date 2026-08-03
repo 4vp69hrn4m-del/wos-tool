@@ -72,10 +72,6 @@ export default function TimerPage() {
     setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   }
 
-  function deleteCard(id: string) {
-    setCards((prev) => prev.filter((c) => c.id !== id));
-  }
-
   function sortByArrival() {
     setCards((prev) =>
       [...prev].sort((a, b) => {
@@ -137,18 +133,6 @@ export default function TimerPage() {
                   style={{ flex: 1 }}
                 />
               </div>
-              <button
-                onClick={() => deleteCard(c.id)}
-                style={{
-                  marginLeft: 8,
-                  padding: "4px 10px",
-                  fontSize: "0.8rem",
-                  background: "#7f1d1d",
-                  color: "#fecaca",
-                }}
-              >
-                削除
-              </button>
             </div>
 
             <label>ユキヒョウ</label>
