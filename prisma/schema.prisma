@@ -119,15 +119,26 @@ model SvsTimeSlot {
   label      String   // 例: "21:00〜23:00"
   createdAt  DateTime @default(now())
 
-  rallyLeaderId        Int?
-  rallyLeader          SvsParticipant? @relation("RallyLeader", fields: [rallyLeaderId], references: [id])
-  rallyLeaderUsePet    Boolean         @default(false)
-  garrisonLeaderId     Int?
-  garrisonLeader       SvsParticipant? @relation("GarrisonLeader", fields: [garrisonLeaderId], references: [id])
-  garrisonLeaderUsePet Boolean         @default(false)
+  garrisonLeaderVbvId     Int?
+  garrisonLeaderVbv       SvsParticipant? @relation("GarrisonLeaderVbv", fields: [garrisonLeaderVbvId], references: [id])
+  garrisonLeaderVbvUsePet Boolean         @default(false)
+  garrisonLeaderCbsId     Int?
+  garrisonLeaderCbs       SvsParticipant? @relation("GarrisonLeaderCbs", fields: [garrisonLeaderCbsId], references: [id])
+  garrisonLeaderCbsUsePet Boolean         @default(false)
 
   participantSlots SvsParticipantTimeSlot[]
   garrisonMembers  SvsGarrisonMember[]
+  rallyLeaders     SvsRallyLeader[]
+}
+
+// 時間帯 と 集結リーダーに選ばれた参加者 の中間テーブル(複数人・上限なし)
+model SvsRallyLeader {
+  id            Int            @id @default(autoincrement())
+  timeSlotId    Int
+  timeSlot      SvsTimeSlot    @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  participantId Int
+  participant   SvsParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  usePet        Boolean        @default(false)
 }
 
 // SVS開催回への参加者登録
@@ -146,9 +157,10 @@ model SvsParticipant {
   createdAt      DateTime @default(now())
 
   timeSlots         SvsParticipantTimeSlot[]
-  rallyLeaderFor    SvsTimeSlot[] @relation("RallyLeader")
-  garrisonLeaderFor SvsTimeSlot[] @relation("GarrisonLeader")
+  garrisonLeaderVbvFor SvsTimeSlot[] @relation("GarrisonLeaderVbv")
+  garrisonLeaderCbsFor SvsTimeSlot[] @relation("GarrisonLeaderCbs")
   garrisonMemberOf  SvsGarrisonMember[]
+  rallyLeaderOf     SvsRallyLeader[]
 }
 
 // 参加者 と 参加可能な時間帯 の中間テーブル(多対多)
