@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/adminClient";
 
 type GarrisonMember = { participantId: number };
 type TimeSlot = {
@@ -91,7 +92,8 @@ export default function Home() {
 
   async function deleteRound(id: number, name: string) {
     if (!confirm(`「${name}」を削除しますか?(中の時間帯・参加者も全て消えます)`)) return;
-    await fetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
+    if (!res) return;
     await load();
   }
 
