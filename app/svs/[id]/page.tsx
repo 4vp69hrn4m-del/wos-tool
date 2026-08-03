@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/adminClient";
 
 type LeaderInfo = { id: number; playerName: string } | null;
 
@@ -96,7 +97,8 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   async function deleteTimeSlot(id: number, l: string) {
     if (!confirm(`「${l}」を削除しますか?`)) return;
-    await fetch(`/api/svs-time-slots/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/svs-time-slots/${id}`, { method: "DELETE" });
+    if (!res) return;
     await load();
   }
 
@@ -136,7 +138,8 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   async function deleteParticipant(id: number, name: string) {
     if (!confirm(`「${name}」の登録を削除しますか?`)) return;
-    await fetch(`/api/svs-participants/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/svs-participants/${id}`, { method: "DELETE" });
+    if (!res) return;
     await load();
   }
 
@@ -173,7 +176,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   async function saveLeaders(slotId: number) {
     const d = leaderDrafts[slotId];
-    await fetch(`/api/svs-time-slots/${slotId}`, {
+    const res = await adminFetch(`/api/svs-time-slots/${slotId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -184,15 +187,17 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         garrisonMemberIds: d.garrisonMemberIds,
       }),
     });
+    if (!res) return;
     await load();
   }
 
   async function saveStatusAndResult() {
-    await fetch(`/api/svs-rounds/${params.id}`, {
+    const res = await adminFetch(`/api/svs-rounds/${params.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: statusDraft, result: resultDraft }),
     });
+    if (!res) return;
     await load();
   }
 
