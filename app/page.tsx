@@ -111,7 +111,7 @@ export default function Home() {
             </Link>
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            駐屯メンバーに選ばれた人だけを表示しています。
+            ↓駐屯メンバー(Garrison Members)
           </p>
           {[...latestRound.timeSlots]
             .sort((a, b) => presetOrder.indexOf(a.label) - presetOrder.indexOf(b.label))
