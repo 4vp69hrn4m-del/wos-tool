@@ -127,20 +127,6 @@ model SvsParticipant {
   noSleepRisk    Boolean  @default(false) // 寝落ちは考慮しないものとする
   createdAt      DateTime @default(now())
 
-  // 領主基礎ステータス(%) - 兵種ごとの攻撃力・防御力・殺傷力・HP
-  lordShieldAtkPct       Int?
-  lordShieldDefPct       Int?
-  lordShieldLethalityPct Int?
-  lordShieldHpPct        Int?
-  lordSpearAtkPct        Int?
-  lordSpearDefPct        Int?
-  lordSpearLethalityPct  Int?
-  lordSpearHpPct         Int?
-  lordBowAtkPct          Int?
-  lordBowDefPct          Int?
-  lordBowLethalityPct    Int?
-  lordBowHpPct           Int?
-
   timeSlots         SvsParticipantTimeSlot[]
   rallyLeaderFor    SvsTimeSlot[] @relation("RallyLeader")
   garrisonLeaderFor SvsTimeSlot[] @relation("GarrisonLeader")
