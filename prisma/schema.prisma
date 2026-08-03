@@ -15,6 +15,7 @@ model Hero {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   troopType String // "歩兵"(盾) / "騎兵"(槍) / "弓兵"(弓) のいずれか
+  generation Int? // 英雄の世代(1〜16など)
   atk       Int?
   def       Int?
   hp        Int?
