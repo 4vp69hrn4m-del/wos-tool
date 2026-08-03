@@ -665,36 +665,46 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                   </div>
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      columnGap: 12,
+                      maxHeight: 200,
+                      overflowY: "auto",
+                      border: "1px solid #334155",
+                      borderRadius: 8,
+                      padding: "4px 8px",
                     }}
                   >
-                    {members.map((p) => (
-                      <label
-                        key={p.id}
-                        style={{ display: "flex", alignItems: "center", gap: 6 }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={draft.garrisonMemberIds.includes(p.id)}
-                          onChange={() => toggleGarrisonMember(t.id, p)}
-                          style={{ width: "auto" }}
-                        />
-                        <span style={{ fontSize: "0.9rem" }}>
-                          {p.playerName}
-                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                            (
-                            {p.hasT12
-                              ? `盾${p.t12ShieldSkill ?? "-"}/槍${
-                                  p.t12SpearSkill ?? "-"
-                                }/弓${p.t12BowSkill ?? "-"}`
-                              : "T12なし"}
-                            )
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        columnGap: 12,
+                      }}
+                    >
+                      {members.map((p) => (
+                        <label
+                          key={p.id}
+                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={draft.garrisonMemberIds.includes(p.id)}
+                            onChange={() => toggleGarrisonMember(t.id, p)}
+                            style={{ width: "auto" }}
+                          />
+                          <span style={{ fontSize: "0.9rem" }}>
+                            {p.playerName}
+                            <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                              (
+                              {p.hasT12
+                                ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                    p.t12SpearSkill ?? "-"
+                                  }/弓${p.t12BowSkill ?? "-"}`
+                                : "T12なし"}
+                              )
+                            </span>
                           </span>
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
@@ -718,36 +728,47 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                   </div>
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      columnGap: 12,
+                      maxHeight: 200,
+                      overflowY: "auto",
+                      border: "1px solid #334155",
+                      borderRadius: 8,
+                      padding: "4px 8px",
                     }}
                   >
-                    {unset.map((p) => (
-                      <label
-                        key={p.id}
-                        style={{ display: "flex", alignItems: "center", gap: 6 }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={draft.garrisonMemberIds.includes(p.id)}
-                          onChange={() => toggleGarrisonMember(t.id, p)}
-                          style={{ width: "auto" }}
-                        />
-                        <span style={{ fontSize: "0.9rem" }}>
-                          {p.playerName}
-                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                            (
-                            {p.hasT12
-                              ? `盾${p.t12ShieldSkill ?? "-"}/槍${
-                                  p.t12SpearSkill ?? "-"
-                                }/弓${p.t12BowSkill ?? "-"}`
-                              : "T12なし"}
-                            )
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        columnGap: 12,
+                      }}
+                    >
+                      {unset.map((p) => (
+                        <label
+                          key={p.id}
+                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={draft.garrisonMemberIds.includes(p.id)}
+                            onChange={() => toggleGarrisonMember(t.id, p)}
+                            style={{ width: "auto" }}
+                          />
+                          <span style={{ fontSize: "0.9rem" }}>
+                            {p.playerName}
+                            <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                              (
+                              {p.hasT12
+                                ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                    p.t12SpearSkill ?? "-"
+                                  }/弓${p.t12BowSkill ?? "-"}`
+                                : "T12なし"}
+                              )
+                            </span>
                           </span>
-                        </span>
-                      </label>
-                    ))}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   </div>
                 </div>
               );
