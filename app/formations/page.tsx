@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/adminClient";
 
 type Formation = {
   id: number;
@@ -166,7 +167,8 @@ export default function FormationsPage() {
 
   async function deleteFormation(id: number, label: string | null) {
     if (!confirm(`「${label || "この編成"}」を削除しますか?`)) return;
-    await fetch(`/api/formations/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/formations/${id}`, { method: "DELETE" });
+    if (!res) return;
     await loadAll();
   }
 
