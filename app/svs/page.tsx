@@ -33,11 +33,12 @@ export default function SvsListPage() {
 
   async function addRound() {
     if (!roundName.trim()) return;
-    await fetch("/api/svs-rounds", {
+    const res = await adminFetch("/api/svs-rounds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ roundName, eventDate, opponent, status }),
     });
+    if (!res) return;
     setRoundName("");
     setEventDate("");
     setOpponent("");
