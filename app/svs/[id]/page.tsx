@@ -27,18 +27,6 @@ type Participant = {
   t12SpearSkill: number | null;
   t12BowSkill: number | null;
   noSleepRisk: boolean;
-  lordShieldAtkPct: number | null;
-  lordShieldDefPct: number | null;
-  lordShieldLethalityPct: number | null;
-  lordShieldHpPct: number | null;
-  lordSpearAtkPct: number | null;
-  lordSpearDefPct: number | null;
-  lordSpearLethalityPct: number | null;
-  lordSpearHpPct: number | null;
-  lordBowAtkPct: number | null;
-  lordBowDefPct: number | null;
-  lordBowLethalityPct: number | null;
-  lordBowHpPct: number | null;
   timeSlots: ParticipantSlot[];
 };
 type SvsRound = {
@@ -75,11 +63,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
   const [selectedSlotIds, setSelectedSlotIds] = useState<number[]>([]);
   const [hasT12, setHasT12] = useState(false);
   const [noSleepRisk, setNoSleepRisk] = useState(false);
-  const [lordStats, setLordStats] = useState<Record<string, string>>({});
-
-  function updateLordStat(key: string, value: string) {
-    setLordStats((prev) => ({ ...prev, [key]: value }));
-  }
   const [t12ShieldSkill, setT12ShieldSkill] = useState("");
   const [t12SpearSkill, setT12SpearSkill] = useState("");
   const [t12BowSkill, setT12BowSkill] = useState("");
@@ -137,18 +120,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         t12SpearSkill: hasT12 ? t12SpearSkill : "",
         t12BowSkill: hasT12 ? t12BowSkill : "",
         noSleepRisk,
-        lordShieldAtkPct: lordStats.shield_atk || "",
-        lordShieldDefPct: lordStats.shield_def || "",
-        lordShieldLethalityPct: lordStats.shield_lethality || "",
-        lordShieldHpPct: lordStats.shield_hp || "",
-        lordSpearAtkPct: lordStats.spear_atk || "",
-        lordSpearDefPct: lordStats.spear_def || "",
-        lordSpearLethalityPct: lordStats.spear_lethality || "",
-        lordSpearHpPct: lordStats.spear_hp || "",
-        lordBowAtkPct: lordStats.bow_atk || "",
-        lordBowDefPct: lordStats.bow_def || "",
-        lordBowLethalityPct: lordStats.bow_lethality || "",
-        lordBowHpPct: lordStats.bow_hp || "",
         timeSlotIds: selectedSlotIds,
       }),
     });
@@ -160,7 +131,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     setT12ShieldSkill("");
     setT12SpearSkill("");
     setT12BowSkill("");
-    setLordStats({});
     await load();
   }
 
@@ -354,48 +324,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
             </div>
           </div>
         )}
-
-        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-          領主基礎ステータス(%・任意) / Lord base stats (%, optional)
-        </p>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: 4 }}></th>
-                <th style={{ padding: 4 }}>攻撃力</th>
-                <th style={{ padding: 4 }}>防御力</th>
-                <th style={{ padding: 4 }}>殺傷力</th>
-                <th style={{ padding: 4 }}>HP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(
-                [
-                  ["shield", "盾兵"],
-                  ["spear", "槍兵"],
-                  ["bow", "弓兵"],
-                ] as const
-              ).map(([troopKey, troopLabel]) => (
-                <tr key={troopKey}>
-                  <td style={{ padding: 4, color: "#94a3b8" }}>{troopLabel}</td>
-                  {(["atk", "def", "lethality", "hp"] as const).map((statKey) => (
-                    <td key={statKey} style={{ padding: 2 }}>
-                      <input
-                        value={lordStats[`${troopKey}_${statKey}`] || ""}
-                        onChange={(e) =>
-                          updateLordStat(`${troopKey}_${statKey}`, e.target.value)
-                        }
-                        style={{ width: "100%", padding: "4px 6px" }}
-                        placeholder="0"
-                      />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
         <button onClick={addParticipant}>参加者を登録 / Register</button>
       </div>
