@@ -39,3 +39,12 @@ export async function POST(req: NextRequest) {
       skillEffectTarget2: body.skillEffectTarget2 || null,
       skillEffectStat2: body.skillEffectStat2 || null,
       skillEffectValue2: toInt(body.skillEffectValue2),
+      skillEffectTarget3: body.skillEffectTarget3 || null,
+      skillEffectStat3: body.skillEffectStat3 || null,
+      skillEffectValue3: toInt(body.skillEffectValue3),
+      skills: body.skills || null,
+      notes: body.notes || null,
+    },
+  });
+  return NextResponse.json(hero);
+}
