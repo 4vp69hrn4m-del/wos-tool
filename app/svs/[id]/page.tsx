@@ -444,94 +444,148 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
             <div className="row">
               <div>
-                <label>集結リーダー(vbv・複数選択可)</label>
-                {inSlot
-                  .filter((p) => p.alliance === "vbv")
-                  .map((p) => {
-                    const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
-                    return (
-                      <div key={p.id} style={{ marginBottom: 4 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label>集結(vbv・複数可)</label>
+                <div
+                  style={{
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    border: "1px solid #334155",
+                    borderRadius: 8,
+                    padding: "4px 8px",
+                  }}
+                >
+                  {inSlot
+                    .filter((p) => p.alliance === "vbv")
+                    .map((p) => {
+                      const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontSize: "0.85rem",
+                            padding: "3px 0",
+                          }}
+                        >
                           <input
                             type="checkbox"
                             checked={!!rl}
                             onChange={() => toggleRallyLeader(t.id, p.id)}
                             style={{ width: "auto" }}
                           />
-                          {p.playerName}
-                        </label>
-                        {rl && (
-                          <label
+                          <span
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              marginLeft: 24,
-                              fontSize: "0.85rem",
+                              flex: 1,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={rl.usePet}
-                              onChange={(e) =>
-                                updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
-                              }
-                              style={{ width: "auto" }}
-                            />
-                            ペット使用
-                          </label>
-                        )}
-                      </div>
-                    );
-                  })}
+                            {p.playerName}
+                          </span>
+                          {rl && (
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                fontSize: "0.75rem",
+                                color: "#94a3b8",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={rl.usePet}
+                                onChange={(e) =>
+                                  updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
+                                }
+                                style={{ width: "auto" }}
+                              />
+                              🐱
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                </div>
               </div>
               <div>
-                <label>集結リーダー(cbs・複数選択可)</label>
-                {inSlot
-                  .filter((p) => p.alliance === "cbs")
-                  .map((p) => {
-                    const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
-                    return (
-                      <div key={p.id} style={{ marginBottom: 4 }}>
-                        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label>集結(cbs・複数可)</label>
+                <div
+                  style={{
+                    maxHeight: 180,
+                    overflowY: "auto",
+                    border: "1px solid #334155",
+                    borderRadius: 8,
+                    padding: "4px 8px",
+                  }}
+                >
+                  {inSlot
+                    .filter((p) => p.alliance === "cbs")
+                    .map((p) => {
+                      const rl = draft.rallyLeaders.find((r) => r.participantId === p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontSize: "0.85rem",
+                            padding: "3px 0",
+                          }}
+                        >
                           <input
                             type="checkbox"
                             checked={!!rl}
                             onChange={() => toggleRallyLeader(t.id, p.id)}
                             style={{ width: "auto" }}
                           />
-                          {p.playerName}
-                        </label>
-                        {rl && (
-                          <label
+                          <span
                             style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              marginLeft: 24,
-                              fontSize: "0.85rem",
+                              flex: 1,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={rl.usePet}
-                              onChange={(e) =>
-                                updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
-                              }
-                              style={{ width: "auto" }}
-                            />
-                            ペット使用
-                          </label>
-                        )}
-                      </div>
-                    );
-                  })}
+                            {p.playerName}
+                          </span>
+                          {rl && (
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                                fontSize: "0.75rem",
+                                color: "#94a3b8",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={rl.usePet}
+                                onChange={(e) =>
+                                  updateRallyLeaderUsePet(t.id, p.id, e.target.checked)
+                                }
+                                style={{ width: "auto" }}
+                              />
+                              🐱
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                </div>
               </div>
             </div>
 
             <div className="row">
               <div>
-                <label>駐屯リーダー(vbv・1人)</label>
+                <label>駐屯(vbv・1人)</label>
                 <select
                   value={draft.garrisonLeaderVbvId}
                   onChange={(e) => updateDraft(t.id, { garrisonLeaderVbvId: e.target.value })}
@@ -558,7 +612,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                 </label>
               </div>
               <div>
-                <label>駐屯リーダー(cbs・1人)</label>
+                <label>駐屯(cbs・1人)</label>
                 <select
                   value={draft.garrisonLeaderCbsId}
                   onChange={(e) => updateDraft(t.id, { garrisonLeaderCbsId: e.target.value })}
