@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { adminFetch } from "@/lib/adminClient";
 
 type Hero = {
   id: number;
@@ -174,11 +175,12 @@ export default function MasterPage() {
     });
 
     if (editingId) {
-      await fetch(`/api/heroes/${editingId}`, {
+      const res = await adminFetch(`/api/heroes/${editingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      if (!res) return;
     } else {
       await fetch("/api/heroes", {
         method: "POST",
@@ -229,20 +231,23 @@ export default function MasterPage() {
 
   async function deleteHero(id: number, name: string) {
     if (!confirm(`「${name}」を削除しますか?`)) return;
-    await fetch(`/api/heroes/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/heroes/${id}`, { method: "DELETE" });
+    if (!res) return;
     if (editingId === id) resetHeroForm();
     await loadAll();
   }
 
   async function deleteExpert(id: number, name: string) {
     if (!confirm(`「${name}」を削除しますか?`)) return;
-    await fetch(`/api/experts/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/experts/${id}`, { method: "DELETE" });
+    if (!res) return;
     await loadAll();
   }
 
   async function deletePet(id: number, name: string) {
     if (!confirm(`「${name}」を削除しますか?`)) return;
-    await fetch(`/api/pets/${id}`, { method: "DELETE" });
+    const res = await adminFetch(`/api/pets/${id}`, { method: "DELETE" });
+    if (!res) return;
     await loadAll();
   }
 
