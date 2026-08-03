@@ -72,19 +72,28 @@ export default function Home() {
   const [latestRound, setLatestRound] = useState<SvsRound | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      const list = await fetch("/api/svs-rounds").then((r) => r.json());
-      if (list.length === 0) {
-        setLoading(false);
-        return;
-      }
-      const detail = await fetch(`/api/svs-rounds/${list[0].id}`).then((r) => r.json());
-      setLatestRound(detail);
+  async function load() {
+    setLoading(true);
+    const list = await fetch("/api/svs-rounds").then((r) => r.json());
+    if (list.length === 0) {
+      setLatestRound(null);
       setLoading(false);
+      return;
     }
+    const detail = await fetch(`/api/svs-rounds/${list[0].id}`).then((r) => r.json());
+    setLatestRound(detail);
+    setLoading(false);
+  }
+
+  useEffect(() => {
     load();
   }, []);
+
+  async function deleteRound(id: number, name: string) {
+    if (!confirm(`「${name}」を削除しますか?(中の時間帯・参加者も全て消えます)`)) return;
+    await fetch(`/api/svs-rounds/${id}`, { method: "DELETE" });
+    await load();
+  }
 
   return (
     <div>
@@ -114,13 +123,43 @@ export default function Home() {
         </p>
       </div>
 
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>その他</h2>
+        <p>
+          <a
+            href="https://www.wosrewards.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            → ギフトコード自動受け取り
+          </a>
+        </p>
+      </div>
+
       {!loading && latestRound && (
         <>
-          <h1>
-            直近の開催回: {latestRound.roundName}{" "}
-            <Link href={`/svs/${latestRound.id}`} style={{ fontSize: "0.8rem" }}>
-              (詳細を開く)
-            </Link>
+          <h1
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          >
+            <span>
+              直近の開催回: {latestRound.roundName}{" "}
+              <Link href={`/svs/${latestRound.id}`} style={{ fontSize: "0.8rem" }}>
+                (詳細を開く)
+              </Link>
+            </span>
+            <button
+              onClick={() => deleteRound(latestRound.id, latestRound.roundName)}
+              style={{
+                marginTop: 0,
+                padding: "4px 10px",
+                fontSize: "0.8rem",
+                background: "#7f1d1d",
+                color: "#fecaca",
+                flexShrink: 0,
+              }}
+            >
+              削除
+            </button>
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
             ↓駐屯メンバー(Garrison Members)
