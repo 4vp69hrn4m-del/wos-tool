@@ -769,7 +769,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                       ))}
                     </div>
                   </div>
-                  </div>
                 </div>
               );
             })()}
@@ -1010,4 +1009,3 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     </div>
   );
 }
-
