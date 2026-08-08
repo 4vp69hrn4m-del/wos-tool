@@ -23,25 +23,7 @@ export async function POST(req: NextRequest) {
   };
 
   const data: Record<string, unknown> = {};
-  const intFields = [
-    "atk",
-    "def",
-    "hp",
-    "lethality",
-    "generation",
-    "skillEffectValue1",
-    "skillEffectValue2",
-    "skillEffectValue3",
-  ];
-  const strFields = [
-    "skillEffectTarget1",
-    "skillEffectStat1",
-    "skillEffectTarget2",
-    "skillEffectStat2",
-    "skillEffectTarget3",
-    "skillEffectStat3",
-    "skills",
-  ];
+  const intFields = ["atk", "def", "hp", "lethality", "generation"];
 
   for (const f of intFields) {
     if (body[f] !== undefined) {
@@ -49,14 +31,35 @@ export async function POST(req: NextRequest) {
       if (v !== undefined) data[f] = v;
     }
   }
-  for (const f of strFields) {
-    if (body[f] !== undefined) data[f] = body[f];
-  }
 
   const hero = await prisma.hero.update({
     where: { name: body.name },
     data,
   });
+
+  // skills配列が渡された場合、その英雄のスキルとしてまとめて追加する
+  if (Array.isArray(body.skills)) {
+    const toIntOrNull = (v: unknown) => {
+      if (v === "" || v === null || v === undefined) return null;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    };
+    for (const s of body.skills) {
+      if (!s.name || !s.triggerType || !s.target || !s.stat) continue;
+      await prisma.heroSkill.create({
+        data: {
+          heroId: existing.id,
+          name: s.name,
+          triggerType: s.triggerType,
+          triggerValue: toIntOrNull(s.triggerValue),
+          target: s.target,
+          stat: s.stat,
+          value: toIntOrNull(s.value) || 0,
+          durationTurns: toIntOrNull(s.durationTurns),
+        },
+      });
+    }
+  }
 
   return NextResponse.json(hero);
 }
