@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react";
 
+type HeroSkill = {
+  id: number;
+  name: string;
+  triggerType: string;
+  triggerValue: number | null;
+  target: string;
+  stat: string;
+  value: number;
+  durationTurns: number | null;
+};
+
 type Hero = {
   id: number;
   name: string;
@@ -10,15 +21,7 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
-  skillEffectTarget1: string | null;
-  skillEffectStat1: string | null;
-  skillEffectValue1: number | null;
-  skillEffectTarget2: string | null;
-  skillEffectStat2: string | null;
-  skillEffectValue2: number | null;
-  skillEffectTarget3: string | null;
-  skillEffectStat3: string | null;
-  skillEffectValue3: number | null;
+  skills: HeroSkill[];
 };
 
 type Formation = {
@@ -119,18 +122,22 @@ function adjustedBaseStats(hs: Hero[], formation: Formation | null): Stats {
   );
 }
 
+// 発動条件に応じて「平均的にはどれくらいの効果か」を期待値で計算する。
+// 常時発動やターン制の効果は、本格的なターン制シミュレーターができるまでの
+// 暫定として満額で計算し、確率発動のみ期待値(値×確率)で割り引く。
+function effectiveValue(s: HeroSkill): number {
+  if (s.triggerType === "chance") {
+    const chance = s.triggerValue ?? 100;
+    return (s.value * chance) / 100;
+  }
+  return s.value;
+}
+
 function collectEffects(hs: Hero[]): Effect[] {
   const effects: Effect[] = [];
   for (const h of hs) {
-    const triples: [string | null, string | null, number | null][] = [
-      [h.skillEffectTarget1, h.skillEffectStat1, h.skillEffectValue1],
-      [h.skillEffectTarget2, h.skillEffectStat2, h.skillEffectValue2],
-      [h.skillEffectTarget3, h.skillEffectStat3, h.skillEffectValue3],
-    ];
-    for (const [target, stat, value] of triples) {
-      if (target && stat && value !== null) {
-        effects.push({ target, stat, value });
-      }
+    for (const s of h.skills) {
+      effects.push({ target: s.target, stat: s.stat, value: effectiveValue(s) });
     }
   }
   return effects;
@@ -205,7 +212,7 @@ export default function SimulatePage() {
     <div>
       <h1>編成シミュレーター(簡易版)</h1>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        英雄の基礎ステータス・スキル効果・領主装備・領主宝石(兵種ごとに乗算)を使った参考スコアです。専門家・ペット・兵種比率・実戦データはまだ反映していません。
+        英雄の基礎ステータス・スキル効果(確率発動は期待値で計算)・領主装備・領主宝石(兵種ごとに乗算)を使った参考スコアです。ターン制の本格シミュレーターは開発中です。専門家・ペット・兵種比率・実戦データはまだ反映していません。
       </p>
 
       <div className="card">
