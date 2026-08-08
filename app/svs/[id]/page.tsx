@@ -57,6 +57,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
   const [round, setRound] = useState<SvsRound | null>(null);
 
   const [playerName, setPlayerName] = useState("");
+  const [registeredMessage, setRegisteredMessage] = useState(false);
   const [homeAlliance, setHomeAlliance] = useState("");
   const [alliance, setAlliance] = useState("vbv");
   const [selectedSlotIds, setSelectedSlotIds] = useState<number[]>([]);
@@ -136,6 +137,8 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     setT12SpearSkill("");
     setT12BowSkill("");
     await load();
+    setRegisteredMessage(true);
+    setTimeout(() => setRegisteredMessage(false), 3000);
   }
 
   async function deleteParticipant(id: number, name: string) {
@@ -246,23 +249,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       <div className="card">
         <div>開催日: {round.eventDate ? round.eventDate.slice(0, 10) : "未定"}</div>
         <div>対戦相手: {round.opponent || "未定"}</div>
-
-        <label>状態</label>
-        <select value={statusDraft} onChange={(e) => setStatusDraft(e.target.value)}>
-          <option value="編成準備中">編成準備中</option>
-          <option value="編成確定">編成確定</option>
-          <option value="開催中">開催中</option>
-          <option value="終了">終了</option>
-        </select>
-
-        <label>勝敗</label>
-        <select value={resultDraft} onChange={(e) => setResultDraft(e.target.value)}>
-          <option value="">未定</option>
-          <option value="win">勝ち</option>
-          <option value="lose">負け</option>
-        </select>
-
-        <button onClick={saveStatusAndResult}>状態・勝敗を保存</button>
       </div>
 
       <div className="card">
@@ -361,6 +347,11 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         )}
 
         <button onClick={addParticipant}>参加者を登録 / Register</button>
+        {registeredMessage && (
+          <span style={{ color: "#4ade80", marginLeft: 8, fontSize: "0.9rem" }}>
+            登録されました!
+          </span>
+        )}
       </div>
 
       <h1>時間帯ごとの参加者・リーダー設定</h1>
@@ -1006,6 +997,26 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
           </div>
         );
       })}
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>状態・勝敗</h2>
+        <label>状態</label>
+        <select value={statusDraft} onChange={(e) => setStatusDraft(e.target.value)}>
+          <option value="編成準備中">編成準備中</option>
+          <option value="編成確定">編成確定</option>
+          <option value="開催中">開催中</option>
+          <option value="終了">終了</option>
+        </select>
+
+        <label>勝敗</label>
+        <select value={resultDraft} onChange={(e) => setResultDraft(e.target.value)}>
+          <option value="">未定</option>
+          <option value="win">勝ち</option>
+          <option value="lose">負け</option>
+        </select>
+
+        <button onClick={saveStatusAndResult}>状態・勝敗を保存</button>
+      </div>
     </div>
   );
 }
