@@ -20,6 +20,7 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
   if (body.name !== undefined) data.name = body.name;
+  if (body.skillSlot !== undefined) data.skillSlot = toInt(body.skillSlot) || 1;
   if (body.triggerType !== undefined) data.triggerType = body.triggerType;
   if (body.triggerValue !== undefined) data.triggerValue = toInt(body.triggerValue);
   if (body.target !== undefined) data.target = body.target;
