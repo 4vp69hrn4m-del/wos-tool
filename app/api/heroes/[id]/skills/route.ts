@@ -29,6 +29,7 @@ export async function POST(
     data: {
       heroId,
       name: body.name,
+      skillSlot: toInt(body.skillSlot) || 1,
       triggerType: body.triggerType,
       triggerValue: toInt(body.triggerValue),
       target: body.target,
