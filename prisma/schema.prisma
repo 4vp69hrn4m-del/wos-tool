@@ -21,19 +21,30 @@ model Hero {
   hp        Int?
   lethality Int?
 
-  // 主要スキル効果(計算に使う数値。最大3つまで)
-  skillEffectTarget1 String? // "self"(自分の兵種が上昇) / "enemy"(敵の兵種が下降)
-  skillEffectStat1   String? // "atk" / "def" / "hp" / "lethality"
-  skillEffectValue1  Int?    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
-  skillEffectTarget2 String?
-  skillEffectStat2   String?
-  skillEffectValue2  Int?
-  skillEffectTarget3 String?
-  skillEffectStat3   String?
-  skillEffectValue3  Int?
+  skills    HeroSkill[] // スキル(何個でも登録可能。戦闘シミュレーターの計算に使用)
 
-  skills    String? // スキル名・効果の自由メモ(計算には使わない参考情報)
   notes     String?
+  createdAt DateTime @default(now())
+}
+
+// 英雄1体につき何個でも登録できるスキル(戦闘シミュレーター用)
+model HeroSkill {
+  id     Int  @id @default(autoincrement())
+  heroId Int
+  hero   Hero @relation(fields: [heroId], references: [id], onDelete: Cascade)
+
+  name String // スキル名(自由記述、例:「決起集会」)
+
+  // 発動条件
+  triggerType  String // "always"(常時) / "chance"(確率) / "everyNTurns"(Nターンごと) / "everyNAttacks"(N回攻撃ごと)
+  triggerValue Int? // chanceなら確率(%)、everyNTurns/everyNAttacksならN
+
+  // 効果
+  target       String // "self"(自分/味方全体が対象) / "enemy"(敵全体が対象)
+  stat         String // "atk" / "def" / "hp" / "lethality"
+  value        Int    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
+  durationTurns Int? // 発動後、何ターン効果が持続するか(nullなら常時 or 即時)
+
   createdAt DateTime @default(now())
 }
 
