@@ -3,6 +3,18 @@
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/adminClient";
 
+type HeroSkill = {
+  id: number;
+  heroId: number;
+  name: string;
+  triggerType: string; // "always" | "chance" | "everyNTurns" | "everyNAttacks"
+  triggerValue: number | null;
+  target: string; // "self" | "enemy"
+  stat: string; // "atk" | "def" | "hp" | "lethality"
+  value: number;
+  durationTurns: number | null;
+};
+
 type Hero = {
   id: number;
   name: string;
@@ -12,16 +24,8 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
-  skillEffectTarget1: string | null;
-  skillEffectStat1: string | null;
-  skillEffectValue1: number | null;
-  skillEffectTarget2: string | null;
-  skillEffectStat2: string | null;
-  skillEffectValue2: number | null;
-  skillEffectTarget3: string | null;
-  skillEffectStat3: string | null;
-  skillEffectValue3: number | null;
-  skills: string | null;
+  notes: string | null;
+  skills: HeroSkill[];
 };
 type Expert = { id: number; name: string };
 type Pet = { id: number; name: string; skill: string | null };
@@ -39,30 +43,18 @@ const statLabel: Record<string, string> = {
   lethality: "殺傷力",
 };
 
-function describeEffect(
-  target: string | null,
-  stat: string | null,
-  value: number | null
-) {
-  if (!target || !stat || value === null) return null;
-  const targetLabel = target === "self" ? "自分" : "敵";
-  const sign = target === "self" ? "+" : "-";
-  return `${targetLabel}の${statLabel[stat]}${sign}${value}%`;
+function describeSkill(s: HeroSkill): string {
+  const targetLabel = s.target === "self" ? "自分" : "敵";
+  const sign = s.target === "self" ? "+" : "-";
+  let trigger = "常時";
+  if (s.triggerType === "chance") trigger = `確率${s.triggerValue ?? "?"}%`;
+  else if (s.triggerType === "everyNTurns") trigger = `${s.triggerValue ?? "?"}ターンごと`;
+  else if (s.triggerType === "everyNAttacks") trigger = `${s.triggerValue ?? "?"}回攻撃ごと`;
+  const duration = s.durationTurns ? `(${s.durationTurns}ターン持続)` : "";
+  return `${s.name}: [${trigger}] ${targetLabel}の${statLabel[s.stat] || s.stat}${sign}${
+    s.value
+  }%${duration}`;
 }
-
-function describeAllEffects(h: Hero) {
-  const pairs: [string | null, string | null, number | null][] = [
-    [h.skillEffectTarget1, h.skillEffectStat1, h.skillEffectValue1],
-    [h.skillEffectTarget2, h.skillEffectStat2, h.skillEffectValue2],
-    [h.skillEffectTarget3, h.skillEffectStat3, h.skillEffectValue3],
-  ];
-  return pairs
-    .map(([target, stat, value]) => describeEffect(target, stat, value))
-    .filter((s): s is string => s !== null);
-}
-
-type EffectDraft = { target: string; stat: string; value: string };
-const emptyEffect: EffectDraft = { target: "", stat: "", value: "" };
 
 export default function MasterPage() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
@@ -77,12 +69,16 @@ export default function MasterPage() {
   const [heroDef, setHeroDef] = useState("");
   const [heroHp, setHeroHp] = useState("");
   const [heroLethality, setHeroLethality] = useState("");
-  const [heroSkills, setHeroSkills] = useState("");
-  const [effects, setEffects] = useState<EffectDraft[]>([
-    { ...emptyEffect },
-    { ...emptyEffect },
-    { ...emptyEffect },
-  ]);
+  const [heroNotes, setHeroNotes] = useState("");
+
+  // 新規スキル追加フォーム(編集中の英雄に対して使う)
+  const [skillName, setSkillName] = useState("");
+  const [skillTriggerType, setSkillTriggerType] = useState("always");
+  const [skillTriggerValue, setSkillTriggerValue] = useState("");
+  const [skillTarget, setSkillTarget] = useState("self");
+  const [skillStat, setSkillStat] = useState("atk");
+  const [skillValue, setSkillValue] = useState("");
+  const [skillDuration, setSkillDuration] = useState("");
 
   const [generationFilter, setGenerationFilter] = useState("");
   const [troopFilter, setTroopFilter] = useState("");
@@ -108,10 +104,6 @@ export default function MasterPage() {
     loadAll();
   }, []);
 
-  function updateEffect(index: number, patch: Partial<EffectDraft>) {
-    setEffects((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
-  }
-
   function resetHeroForm() {
     setEditingId(null);
     setHeroName("");
@@ -121,8 +113,18 @@ export default function MasterPage() {
     setHeroDef("");
     setHeroHp("");
     setHeroLethality("");
-    setHeroSkills("");
-    setEffects([{ ...emptyEffect }, { ...emptyEffect }, { ...emptyEffect }]);
+    setHeroNotes("");
+    resetSkillForm();
+  }
+
+  function resetSkillForm() {
+    setSkillName("");
+    setSkillTriggerType("always");
+    setSkillTriggerValue("");
+    setSkillTarget("self");
+    setSkillStat("atk");
+    setSkillValue("");
+    setSkillDuration("");
   }
 
   function startEditHero(h: Hero) {
@@ -134,24 +136,8 @@ export default function MasterPage() {
     setHeroDef(h.def !== null ? String(h.def) : "");
     setHeroHp(h.hp !== null ? String(h.hp) : "");
     setHeroLethality(h.lethality !== null ? String(h.lethality) : "");
-    setHeroSkills(h.skills || "");
-    setEffects([
-      {
-        target: h.skillEffectTarget1 || "",
-        stat: h.skillEffectStat1 || "",
-        value: h.skillEffectValue1 !== null ? String(h.skillEffectValue1) : "",
-      },
-      {
-        target: h.skillEffectTarget2 || "",
-        stat: h.skillEffectStat2 || "",
-        value: h.skillEffectValue2 !== null ? String(h.skillEffectValue2) : "",
-      },
-      {
-        target: h.skillEffectTarget3 || "",
-        stat: h.skillEffectStat3 || "",
-        value: h.skillEffectValue3 !== null ? String(h.skillEffectValue3) : "",
-      },
-    ]);
+    setHeroNotes(h.notes || "");
+    resetSkillForm();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -166,13 +152,8 @@ export default function MasterPage() {
       def: heroDef,
       hp: heroHp,
       lethality: heroLethality,
-      skills: heroSkills,
+      notes: heroNotes,
     };
-    effects.forEach((e, i) => {
-      body[`skillEffectTarget${i + 1}`] = e.target;
-      body[`skillEffectStat${i + 1}`] = e.stat;
-      body[`skillEffectValue${i + 1}`] = e.value;
-    });
 
     if (editingId) {
       const res = await adminFetch(`/api/heroes/${editingId}`, {
@@ -193,8 +174,39 @@ export default function MasterPage() {
     await loadAll();
   }
 
+  async function addSkill() {
+    if (!editingId || !skillName.trim()) return;
+    const res = await adminFetch(`/api/heroes/${editingId}/skills`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: skillName,
+        triggerType: skillTriggerType,
+        triggerValue: skillTriggerValue,
+        target: skillTarget,
+        stat: skillStat,
+        value: skillValue,
+        durationTurns: skillDuration,
+      }),
+    });
+    if (!res) return;
+    resetSkillForm();
+    await loadAll();
+  }
+
+  async function deleteSkill(skillId: number, label: string) {
+    if (!confirm(`スキル「${label}」を削除しますか?`)) return;
+    const res = await adminFetch(`/api/hero-skills/${skillId}`, { method: "DELETE" });
+    if (!res) return;
+    await loadAll();
+  }
+
   async function seedHeroes() {
-    if (!confirm("SSR英雄49人(盾17/槍16/弓16)をまとめて登録しますか?既存の名前は重複登録されません。")) {
+    if (
+      !confirm(
+        "SSR英雄49人(盾17/槍16/弓16)をまとめて登録しますか?既存の名前は重複登録されません。"
+      )
+    ) {
       return;
     }
     setSeeding(true);
@@ -257,6 +269,8 @@ export default function MasterPage() {
     return true;
   });
 
+  const editingHero = heroes.find((h) => h.id === editingId) || null;
+
   return (
     <div>
       <h1>マスターデータ管理</h1>
@@ -267,7 +281,7 @@ export default function MasterPage() {
       <div className="card">
         <h2 style={{ marginTop: 0 }}>英雄の一括登録</h2>
         <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-          SSR英雄49人(盾17/槍16/弓16、世代1〜16)の名前・兵種・世代をまとめて登録します。ステータスは後で1体ずつ編集してください。
+          SSR英雄49人(盾17/槍16/弓16、世代1〜16)の名前・兵種・世代をまとめて登録します。ステータスやスキルは後で1体ずつ編集してください。
         </p>
         <button onClick={seedHeroes} disabled={seeding}>
           {seeding ? "登録中..." : "SSR英雄49人を一括登録"}
@@ -275,9 +289,7 @@ export default function MasterPage() {
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>
-          英雄{editingId ? "の編集" : "を追加"}
-        </h2>
+        <h2 style={{ marginTop: 0 }}>英雄{editingId ? "の編集" : "を追加"}</h2>
         <label>英雄名</label>
         <input value={heroName} onChange={(e) => setHeroName(e.target.value)} />
 
@@ -321,60 +333,11 @@ export default function MasterPage() {
           </div>
         </div>
 
-        {effects.map((eff, i) => (
-          <div key={i}>
-            <p
-              style={{
-                color: "#94a3b8",
-                fontSize: "0.85rem",
-                marginTop: 16,
-                marginBottom: 4,
-              }}
-            >
-              主要スキル効果{i + 1}(計算に使う数値・任意)
-            </p>
-            <div className="row">
-              <div>
-                <label>対象</label>
-                <select
-                  value={eff.target}
-                  onChange={(e) => updateEffect(i, { target: e.target.value })}
-                >
-                  <option value="">(なし)</option>
-                  <option value="self">自分(上昇)</option>
-                  <option value="enemy">敵(下降)</option>
-                </select>
-              </div>
-              <div>
-                <label>ステータス</label>
-                <select
-                  value={eff.stat}
-                  onChange={(e) => updateEffect(i, { stat: e.target.value })}
-                >
-                  <option value="">(なし)</option>
-                  <option value="atk">攻撃力</option>
-                  <option value="def">防御力</option>
-                  <option value="hp">HP</option>
-                  <option value="lethality">殺傷力</option>
-                </select>
-              </div>
-              <div>
-                <label>値(%)</label>
-                <input
-                  value={eff.value}
-                  onChange={(e) => updateEffect(i, { value: e.target.value })}
-                  placeholder="例: 30"
-                />
-              </div>
-            </div>
-          </div>
-        ))}
-
-        <label>スキルメモ(自由記述・参考情報。計算には使われません)</label>
+        <label>メモ(自由記述)</label>
         <textarea
-          value={heroSkills}
-          onChange={(e) => setHeroSkills(e.target.value)}
-          rows={4}
+          value={heroNotes}
+          onChange={(e) => setHeroNotes(e.target.value)}
+          rows={3}
           style={{
             width: "100%",
             padding: "8px 10px",
@@ -396,6 +359,122 @@ export default function MasterPage() {
           </button>
         )}
 
+        {editingId && editingHero && (
+          <div style={{ marginTop: 20, borderTop: "1px solid #334155", paddingTop: 16 }}>
+            <h3 style={{ marginTop: 0 }}>{editingHero.name}のスキル一覧</h3>
+            {editingHero.skills.length === 0 && (
+              <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                まだスキルが登録されていません。
+              </p>
+            )}
+            {editingHero.skills.map((s) => (
+              <div
+                key={s.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span>{describeSkill(s)}</span>
+                <button
+                  onClick={() => deleteSkill(s.id, s.name)}
+                  style={{
+                    marginTop: 0,
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    background: "#7f1d1d",
+                    color: "#fecaca",
+                    flexShrink: 0,
+                  }}
+                >
+                  削除
+                </button>
+              </div>
+            ))}
+
+            <h3>スキルを追加</h3>
+            <label>スキル名</label>
+            <input
+              value={skillName}
+              onChange={(e) => setSkillName(e.target.value)}
+              placeholder="例: 決起集会"
+            />
+
+            <div className="row">
+              <div>
+                <label>発動条件</label>
+                <select
+                  value={skillTriggerType}
+                  onChange={(e) => setSkillTriggerType(e.target.value)}
+                >
+                  <option value="always">常時</option>
+                  <option value="chance">確率(%)</option>
+                  <option value="everyNTurns">Nターンごと</option>
+                  <option value="everyNAttacks">N回攻撃ごと</option>
+                </select>
+              </div>
+              {skillTriggerType !== "always" && (
+                <div>
+                  <label>
+                    {skillTriggerType === "chance"
+                      ? "確率(%)"
+                      : skillTriggerType === "everyNTurns"
+                      ? "何ターンごと"
+                      : "何回攻撃ごと"}
+                  </label>
+                  <input
+                    value={skillTriggerValue}
+                    onChange={(e) => setSkillTriggerValue(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="row">
+              <div>
+                <label>対象</label>
+                <select value={skillTarget} onChange={(e) => setSkillTarget(e.target.value)}>
+                  <option value="self">自分(上昇)</option>
+                  <option value="enemy">敵(下降)</option>
+                </select>
+              </div>
+              <div>
+                <label>ステータス</label>
+                <select value={skillStat} onChange={(e) => setSkillStat(e.target.value)}>
+                  <option value="atk">攻撃力</option>
+                  <option value="def">防御力</option>
+                  <option value="hp">HP</option>
+                  <option value="lethality">殺傷力</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="row">
+              <div>
+                <label>値(%)</label>
+                <input
+                  value={skillValue}
+                  onChange={(e) => setSkillValue(e.target.value)}
+                  placeholder="例: 25"
+                />
+              </div>
+              <div>
+                <label>持続ターン数(任意)</label>
+                <input
+                  value={skillDuration}
+                  onChange={(e) => setSkillDuration(e.target.value)}
+                  placeholder="例: 2"
+                />
+              </div>
+            </div>
+
+            <button onClick={addSkill}>このスキルを追加</button>
+          </div>
+        )}
+
         <div className="row" style={{ marginTop: 16 }}>
           <div>
             <label>絞り込み: 兵種</label>
@@ -408,7 +487,10 @@ export default function MasterPage() {
           </div>
           <div>
             <label>絞り込み: 世代</label>
-            <select value={generationFilter} onChange={(e) => setGenerationFilter(e.target.value)}>
+            <select
+              value={generationFilter}
+              onChange={(e) => setGenerationFilter(e.target.value)}
+            >
               <option value="">すべて</option>
               {Array.from({ length: 16 }, (_, i) => i + 1).map((g) => (
                 <option key={g} value={g}>
@@ -420,59 +502,51 @@ export default function MasterPage() {
         </div>
 
         <div style={{ marginTop: 16 }}>
-          {filteredHeroes.map((h) => {
-            const effectTexts = describeAllEffects(h);
-            return (
-              <div
-                key={h.id}
-                style={{
-                  marginBottom: 8,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 8,
-                }}
-              >
-                <div>
-                  ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}
-                  {h.generation ? ` / 第${h.generation}世代` : ""}) 攻{h.atk ?? "-"} / 防
-                  {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"}
-                  {effectTexts.length > 0 && <span> / スキル効果: {effectTexts.join("、")}</span>}
-                  {h.skills && (
-                    <div style={{ color: "#94a3b8", fontSize: "0.85rem", whiteSpace: "pre-wrap" }}>
-                      {h.skills}
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                  <button
-                    onClick={() => startEditHero(h)}
-                    style={{
-                      marginTop: 0,
-                      padding: "4px 10px",
-                      fontSize: "0.8rem",
-                      background: "#1e3a5f",
-                      color: "#bfdbfe",
-                    }}
-                  >
-                    編集
-                  </button>
-                  <button
-                    onClick={() => deleteHero(h.id, h.name)}
-                    style={{
-                      marginTop: 0,
-                      padding: "4px 10px",
-                      fontSize: "0.8rem",
-                      background: "#7f1d1d",
-                      color: "#fecaca",
-                    }}
-                  >
-                    削除
-                  </button>
-                </div>
+          {filteredHeroes.map((h) => (
+            <div
+              key={h.id}
+              style={{
+                marginBottom: 8,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <div>
+                ・{h.name} ({troopTypeLabel[h.troopType] || h.troopType}
+                {h.generation ? ` / 第${h.generation}世代` : ""}) 攻{h.atk ?? "-"} / 防
+                {h.def ?? "-"} / 体{h.hp ?? "-"} / 殺{h.lethality ?? "-"} / スキル
+                {h.skills.length}個
               </div>
-            );
-          })}
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button
+                  onClick={() => startEditHero(h)}
+                  style={{
+                    marginTop: 0,
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    background: "#1e3a5f",
+                    color: "#bfdbfe",
+                  }}
+                >
+                  編集
+                </button>
+                <button
+                  onClick={() => deleteHero(h.id, h.name)}
+                  style={{
+                    marginTop: 0,
+                    padding: "4px 10px",
+                    fontSize: "0.8rem",
+                    background: "#7f1d1d",
+                    color: "#fecaca",
+                  }}
+                >
+                  削除
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
