@@ -7,6 +7,7 @@ type HeroSkill = {
   id: number;
   heroId: number;
   name: string;
+  skillSlot: number; // ゲーム内のスキル番号(1〜3)
   triggerType: string; // "always" | "chance" | "everyNTurns" | "everyNAttacks"
   triggerValue: number | null;
   target: string; // "self" | "enemy"
@@ -51,9 +52,9 @@ function describeSkill(s: HeroSkill): string {
   else if (s.triggerType === "everyNTurns") trigger = `${s.triggerValue ?? "?"}ターンごと`;
   else if (s.triggerType === "everyNAttacks") trigger = `${s.triggerValue ?? "?"}回攻撃ごと`;
   const duration = s.durationTurns ? `(${s.durationTurns}ターン持続)` : "";
-  return `${s.name}: [${trigger}] ${targetLabel}の${statLabel[s.stat] || s.stat}${sign}${
-    s.value
-  }%${duration}`;
+  return `[スキル${s.skillSlot}] ${s.name}: [${trigger}] ${targetLabel}の${
+    statLabel[s.stat] || s.stat
+  }${sign}${s.value}%${duration}`;
 }
 
 export default function MasterPage() {
@@ -73,6 +74,7 @@ export default function MasterPage() {
 
   // 新規スキル追加フォーム(編集中の英雄に対して使う)
   const [skillName, setSkillName] = useState("");
+  const [skillSlot, setSkillSlot] = useState("1");
   const [skillTriggerType, setSkillTriggerType] = useState("always");
   const [skillTriggerValue, setSkillTriggerValue] = useState("");
   const [skillTarget, setSkillTarget] = useState("self");
@@ -119,6 +121,7 @@ export default function MasterPage() {
 
   function resetSkillForm() {
     setSkillName("");
+    setSkillSlot("1");
     setSkillTriggerType("always");
     setSkillTriggerValue("");
     setSkillTarget("self");
@@ -181,6 +184,7 @@ export default function MasterPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: skillName,
+        skillSlot: skillSlot,
         triggerType: skillTriggerType,
         triggerValue: skillTriggerValue,
         target: skillTarget,
@@ -402,6 +406,13 @@ export default function MasterPage() {
               onChange={(e) => setSkillName(e.target.value)}
               placeholder="例: 決起集会"
             />
+
+            <label>スキル番号(ゲーム内のスキル1〜3。集結リーダーは全部、フィラーはスキル1のみ反映)</label>
+            <select value={skillSlot} onChange={(e) => setSkillSlot(e.target.value)}>
+              <option value="1">スキル1</option>
+              <option value="2">スキル2</option>
+              <option value="3">スキル3</option>
+            </select>
 
             <div className="row">
               <div>
