@@ -34,6 +34,7 @@ model HeroSkill {
   hero   Hero @relation(fields: [heroId], references: [id], onDelete: Cascade)
 
   name String // スキル名(自由記述、例:「決起集会」)
+  skillSlot Int // ゲーム内のスキル番号(1〜3)。集結リーダーは1〜3全部、フィラーはスキル1のみ反映される仕様に対応
 
   // 発動条件
   triggerType  String // "always"(常時) / "chance"(確率) / "everyNTurns"(Nターンごと) / "everyNAttacks"(N回攻撃ごと)
