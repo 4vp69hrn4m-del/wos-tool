@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
         data: {
           heroId: existing.id,
           name: s.name,
+          skillSlot: toIntOrNull(s.skillSlot) || 1,
           triggerType: s.triggerType,
           triggerValue: toIntOrNull(s.triggerValue),
           target: s.target,
