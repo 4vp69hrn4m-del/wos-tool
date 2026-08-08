@@ -28,16 +28,7 @@ export async function PATCH(
       def: toInt(body.def),
       hp: toInt(body.hp),
       lethality: toInt(body.lethality),
-      skillEffectTarget1: body.skillEffectTarget1 || null,
-      skillEffectStat1: body.skillEffectStat1 || null,
-      skillEffectValue1: toInt(body.skillEffectValue1),
-      skillEffectTarget2: body.skillEffectTarget2 || null,
-      skillEffectStat2: body.skillEffectStat2 || null,
-      skillEffectValue2: toInt(body.skillEffectValue2),
-      skillEffectTarget3: body.skillEffectTarget3 || null,
-      skillEffectStat3: body.skillEffectStat3 || null,
-      skillEffectValue3: toInt(body.skillEffectValue3),
-      skills: body.skills || null,
+      notes: body.notes || null,
     },
   });
   return NextResponse.json(hero);
