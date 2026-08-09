@@ -39,12 +39,14 @@ model HeroSkill {
   // 発動条件
   triggerType  String // "always"(常時) / "chance"(確率) / "everyNTurns"(Nターンごと) / "everyNAttacks"(N回攻撃ごと)
   triggerValue Int? // chanceなら確率(%)、everyNTurns/everyNAttacksならN
+  requiredTroopType String? // このスキルが発動するために連れて行く必要がある兵種("歩兵"/"騎兵"/"弓兵"。nullなら兵種を問わず常に発動)
 
   // 効果
   target       String // "self"(自分/味方全体が対象) / "enemy"(敵全体が対象)
   stat         String // "atk" / "def" / "hp" / "lethality"
   value        Int    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
   durationTurns Int? // 発動後、何ターン効果が持続するか(nullなら常時 or 即時)
+  targetTroopType String? // このスキルが狙う兵種("歩兵"/"騎兵"/"弓兵"。nullなら対象兵種を問わない)
 
   createdAt DateTime @default(now())
 }
