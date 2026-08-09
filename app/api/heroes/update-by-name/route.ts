@@ -30,13 +30,13 @@ export async function POST(req: NextRequest) {
 
   const data: Record<string, unknown> = {};
   const intFields = [
-    "atk",
-    "def",
     "hp",
     "lethality",
     "generation",
   ];
   const floatFields = [
+    "atk",
+    "def",
     "expeditionAtkPct",
     "expeditionDefPct",
     "exclusiveGearHpPct",
@@ -61,19 +61,26 @@ export async function POST(req: NextRequest) {
     data,
   });
 
-  // skills配列が渡された場合、同じ名前の既存スキルだけ削除してから登録し直す
-  // (このAPIが送ってきた分だけを上書きし、他の手段で登録された別のスキル名は残す)
+  // skills配列が渡された場合、まずこのリクエストに含まれるスキル名をまとめて1回だけ削除し、
+  // そのあとまとめて作り直す(同じ名前が複数件届くケースで、後の1件が前の1件を
+  // 消してしまわないようにするため)
   if (Array.isArray(body.skills)) {
     const toIntOrNull = (v: unknown) => {
       if (v === "" || v === null || v === undefined) return null;
       const n = Number(v);
       return Number.isNaN(n) ? null : n;
     };
-    for (const s of body.skills) {
-      if (!s.name || !s.triggerType) continue;
+
+    const validSkills = body.skills.filter((s: Record<string, unknown>) => s.name && s.triggerType);
+    const names = Array.from(new Set(validSkills.map((s: Record<string, unknown>) => s.name as string)));
+
+    if (names.length > 0) {
       await prisma.heroSkill.deleteMany({
-        where: { heroId: existing.id, name: s.name },
+        where: { heroId: existing.id, name: { in: names } },
       });
+    }
+
+    for (const s of validSkills) {
       await prisma.heroSkill.create({
         data: {
           heroId: existing.id,
