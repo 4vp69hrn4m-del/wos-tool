@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       return Number.isNaN(n) ? null : n;
     };
     for (const s of body.skills) {
-      if (!s.name || !s.triggerType || !s.target || !s.stat) continue;
+      if (!s.name || !s.triggerType) continue;
       await prisma.heroSkill.create({
         data: {
           heroId: existing.id,
@@ -62,11 +62,12 @@ export async function POST(req: NextRequest) {
           triggerType: s.triggerType,
           triggerValue: toIntOrNull(s.triggerValue),
           requiredTroopType: s.requiredTroopType || null,
-          target: s.target,
-          stat: s.stat,
-          value: toIntOrNull(s.value) || 0,
+          target: s.target || null,
+          stat: s.stat || null,
+          value: toIntOrNull(s.value),
           durationTurns: toIntOrNull(s.durationTurns),
           targetTroopType: s.targetTroopType || null,
+          rawText: s.rawText || null,
         },
       });
     }
