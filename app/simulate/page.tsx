@@ -21,8 +21,6 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
-  exclusiveGearAtkPct: number | null;
-  exclusiveGearDefPct: number | null;
   exclusiveGearHpPct: number | null;
   exclusiveGearLethalityPct: number | null;
   skills: HeroSkill[];
@@ -93,11 +91,10 @@ function statSuffix(stat: StatKey): string {
   return "Lethality";
 }
 
-function exclusiveGearField(stat: StatKey): keyof Hero {
-  if (stat === "atk") return "exclusiveGearAtkPct";
-  if (stat === "def") return "exclusiveGearDefPct";
+function exclusiveGearField(stat: StatKey): keyof Hero | null {
   if (stat === "hp") return "exclusiveGearHpPct";
-  return "exclusiveGearLethalityPct";
+  if (stat === "lethality") return "exclusiveGearLethalityPct";
+  return null;
 }
 
 // 発動条件に応じて「平均的にはどれくらいの効果か」を期待値で計算する。
@@ -133,7 +130,8 @@ function heroSkillAdditivePct(hero: Hero, stat: StatKey): number {
 
 // 専用装備・ダイヤバフ・ペットバフの合計(乗算バフ扱い)
 function multiplicativePct(hero: Hero, formation: Formation | null, stat: StatKey): number {
-  const gearPct = (hero[exclusiveGearField(stat)] as number | null) ?? 0;
+  const gearField = exclusiveGearField(stat);
+  const gearPct = gearField ? (hero[gearField] as number | null) ?? 0 : 0;
   const diamondPct = formation?.diamondBuffActive ? DIAMOND_SELF_PCT : 0;
   const petPct = formation?.petBuffActive ? PET_SELF_PCT : 0;
   return gearPct + diamondPct + petPct;
