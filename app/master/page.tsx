@@ -55,6 +55,8 @@ function describeSkill(s: HeroSkill): string {
   if (s.triggerType === "chance") trigger = `確率${s.triggerValue ?? "?"}%`;
   else if (s.triggerType === "everyNTurns") trigger = `${s.triggerValue ?? "?"}ターンごと`;
   else if (s.triggerType === "everyNAttacks") trigger = `${s.triggerValue ?? "?"}回攻撃ごと`;
+  else if (s.triggerType === "rallyOnly") trigger = "集結時のみ";
+  else if (s.triggerType === "defenseOnly") trigger = "防衛時のみ";
   const duration = s.durationTurns ? `(${s.durationTurns}ターン持続)` : "";
   const required = s.requiredTroopType ? `【${s.requiredTroopType}帯同時】` : "";
   const targetTroop = s.targetTroopType ? `対象:${s.targetTroopType}` : "";
@@ -467,9 +469,13 @@ export default function MasterPage() {
                   <option value="chance">確率(%)</option>
                   <option value="everyNTurns">Nターンごと</option>
                   <option value="everyNAttacks">N回攻撃ごと</option>
+                  <option value="rallyOnly">集結時のみ</option>
+                  <option value="defenseOnly">防衛時のみ</option>
                 </select>
               </div>
-              {skillTriggerType !== "always" && (
+              {skillTriggerType !== "always" &&
+                skillTriggerType !== "rallyOnly" &&
+                skillTriggerType !== "defenseOnly" && (
                 <div>
                   <label>
                     {skillTriggerType === "chance"
