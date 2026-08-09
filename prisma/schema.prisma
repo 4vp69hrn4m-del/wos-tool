@@ -23,6 +23,12 @@ model Hero {
 
   skills    HeroSkill[] // スキル(何個でも登録可能。戦闘シミュレーターの計算に使用)
 
+  // 専用装備によるステータス上昇(%・乗算バフ)
+  exclusiveGearAtkPct       Int?
+  exclusiveGearDefPct       Int?
+  exclusiveGearHpPct        Int?
+  exclusiveGearLethalityPct Int?
+
   notes     String?
   createdAt DateTime @default(now())
 }
@@ -104,6 +110,11 @@ model Formation {
   gemSpearHpPct         Int?
   gemBowLethalityPct    Int?
   gemBowHpPct           Int?
+
+  // ダイヤバフ・ペットバフ(全ペット共通)は、オン/オフだけ持たせる。
+  // 実際の%(固定値)はシミュレーター側のコードに直接組み込む。
+  diamondBuffActive Boolean @default(false)
+  petBuffActive     Boolean @default(false)
 
   // 装備などは後で構造化する。まずはJSON文字列で自由記述。
   equipmentNote String?
