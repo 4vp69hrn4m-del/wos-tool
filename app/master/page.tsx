@@ -10,10 +10,12 @@ type HeroSkill = {
   skillSlot: number; // ゲーム内のスキル番号(1〜3)
   triggerType: string; // "always" | "chance" | "everyNTurns" | "everyNAttacks"
   triggerValue: number | null;
+  requiredTroopType: string | null; // 発動に必要な兵種("歩兵"/"騎兵"/"弓兵"/null)
   target: string; // "self" | "enemy"
   stat: string; // "atk" | "def" | "hp" | "lethality"
   value: number;
   durationTurns: number | null;
+  targetTroopType: string | null; // 対象の兵種("歩兵"/"騎兵"/"弓兵"/null)
 };
 
 type Hero = {
@@ -52,9 +54,11 @@ function describeSkill(s: HeroSkill): string {
   else if (s.triggerType === "everyNTurns") trigger = `${s.triggerValue ?? "?"}ターンごと`;
   else if (s.triggerType === "everyNAttacks") trigger = `${s.triggerValue ?? "?"}回攻撃ごと`;
   const duration = s.durationTurns ? `(${s.durationTurns}ターン持続)` : "";
-  return `[スキル${s.skillSlot}] ${s.name}: [${trigger}] ${targetLabel}の${
+  const required = s.requiredTroopType ? `【${s.requiredTroopType}帯同時】` : "";
+  const targetTroop = s.targetTroopType ? `対象:${s.targetTroopType}` : "";
+  return `[スキル${s.skillSlot}] ${s.name}: ${required}[${trigger}] ${targetLabel}の${
     statLabel[s.stat] || s.stat
-  }${sign}${s.value}%${duration}`;
+  }${sign}${s.value}%${duration}${targetTroop ? ` (${targetTroop})` : ""}`;
 }
 
 export default function MasterPage() {
@@ -77,10 +81,12 @@ export default function MasterPage() {
   const [skillSlot, setSkillSlot] = useState("1");
   const [skillTriggerType, setSkillTriggerType] = useState("always");
   const [skillTriggerValue, setSkillTriggerValue] = useState("");
+  const [skillRequiredTroopType, setSkillRequiredTroopType] = useState("");
   const [skillTarget, setSkillTarget] = useState("self");
   const [skillStat, setSkillStat] = useState("atk");
   const [skillValue, setSkillValue] = useState("");
   const [skillDuration, setSkillDuration] = useState("");
+  const [skillTargetTroopType, setSkillTargetTroopType] = useState("");
 
   const [generationFilter, setGenerationFilter] = useState("");
   const [troopFilter, setTroopFilter] = useState("");
@@ -124,10 +130,12 @@ export default function MasterPage() {
     setSkillSlot("1");
     setSkillTriggerType("always");
     setSkillTriggerValue("");
+    setSkillRequiredTroopType("");
     setSkillTarget("self");
     setSkillStat("atk");
     setSkillValue("");
     setSkillDuration("");
+    setSkillTargetTroopType("");
   }
 
   function startEditHero(h: Hero) {
@@ -187,10 +195,12 @@ export default function MasterPage() {
         skillSlot: skillSlot,
         triggerType: skillTriggerType,
         triggerValue: skillTriggerValue,
+        requiredTroopType: skillRequiredTroopType,
         target: skillTarget,
         stat: skillStat,
         value: skillValue,
         durationTurns: skillDuration,
+        targetTroopType: skillTargetTroopType,
       }),
     });
     if (!res) return;
@@ -444,6 +454,17 @@ export default function MasterPage() {
               )}
             </div>
 
+            <label>発動に必要な兵種(その兵種を連れていないと発動しない。指定なしなら常に発動)</label>
+            <select
+              value={skillRequiredTroopType}
+              onChange={(e) => setSkillRequiredTroopType(e.target.value)}
+            >
+              <option value="">指定なし(常に発動)</option>
+              <option value="歩兵">歩兵(盾)を連れている時のみ</option>
+              <option value="騎兵">騎兵(槍)を連れている時のみ</option>
+              <option value="弓兵">弓兵(弓)を連れている時のみ</option>
+            </select>
+
             <div className="row">
               <div>
                 <label>対象</label>
@@ -462,6 +483,17 @@ export default function MasterPage() {
                 </select>
               </div>
             </div>
+
+            <label>対象の兵種(このスキルが狙う兵種。指定なしなら兵種を問わない)</label>
+            <select
+              value={skillTargetTroopType}
+              onChange={(e) => setSkillTargetTroopType(e.target.value)}
+            >
+              <option value="">指定なし</option>
+              <option value="歩兵">歩兵(盾)を狙う</option>
+              <option value="騎兵">騎兵(槍)を狙う</option>
+              <option value="弓兵">弓兵(弓)を狙う</option>
+            </select>
 
             <div className="row">
               <div>
