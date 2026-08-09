@@ -27,8 +27,6 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
-  exclusiveGearAtkPct: number | null;
-  exclusiveGearDefPct: number | null;
   exclusiveGearHpPct: number | null;
   exclusiveGearLethalityPct: number | null;
   notes: string | null;
@@ -78,8 +76,6 @@ export default function MasterPage() {
   const [heroDef, setHeroDef] = useState("");
   const [heroHp, setHeroHp] = useState("");
   const [heroLethality, setHeroLethality] = useState("");
-  const [heroExclusiveGearAtk, setHeroExclusiveGearAtk] = useState("");
-  const [heroExclusiveGearDef, setHeroExclusiveGearDef] = useState("");
   const [heroExclusiveGearHp, setHeroExclusiveGearHp] = useState("");
   const [heroExclusiveGearLethality, setHeroExclusiveGearLethality] = useState("");
   const [heroNotes, setHeroNotes] = useState("");
@@ -129,8 +125,6 @@ export default function MasterPage() {
     setHeroDef("");
     setHeroHp("");
     setHeroLethality("");
-    setHeroExclusiveGearAtk("");
-    setHeroExclusiveGearDef("");
     setHeroExclusiveGearHp("");
     setHeroExclusiveGearLethality("");
     setHeroNotes("");
@@ -159,12 +153,6 @@ export default function MasterPage() {
     setHeroDef(h.def !== null ? String(h.def) : "");
     setHeroHp(h.hp !== null ? String(h.hp) : "");
     setHeroLethality(h.lethality !== null ? String(h.lethality) : "");
-    setHeroExclusiveGearAtk(
-      h.exclusiveGearAtkPct !== null ? String(h.exclusiveGearAtkPct) : ""
-    );
-    setHeroExclusiveGearDef(
-      h.exclusiveGearDefPct !== null ? String(h.exclusiveGearDefPct) : ""
-    );
     setHeroExclusiveGearHp(h.exclusiveGearHpPct !== null ? String(h.exclusiveGearHpPct) : "");
     setHeroExclusiveGearLethality(
       h.exclusiveGearLethalityPct !== null ? String(h.exclusiveGearLethalityPct) : ""
@@ -185,8 +173,6 @@ export default function MasterPage() {
       def: heroDef,
       hp: heroHp,
       lethality: heroLethality,
-      exclusiveGearAtkPct: heroExclusiveGearAtk,
-      exclusiveGearDefPct: heroExclusiveGearDef,
       exclusiveGearHpPct: heroExclusiveGearHp,
       exclusiveGearLethalityPct: heroExclusiveGearLethality,
       notes: heroNotes,
@@ -374,24 +360,8 @@ export default function MasterPage() {
         </div>
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-          専用装備によるステータス上昇(%・乗算バフ)
+          専用装備によるステータス上昇(%・乗算バフ・殺傷力とHPのみ)
         </p>
-        <div className="row">
-          <div>
-            <label>攻撃力</label>
-            <input
-              value={heroExclusiveGearAtk}
-              onChange={(e) => setHeroExclusiveGearAtk(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>防御力</label>
-            <input
-              value={heroExclusiveGearDef}
-              onChange={(e) => setHeroExclusiveGearDef(e.target.value)}
-            />
-          </div>
-        </div>
         <div className="row">
           <div>
             <label>HP</label>
