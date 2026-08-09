@@ -22,6 +22,12 @@ export async function POST(req: NextRequest) {
     return Number.isNaN(n) ? undefined : n;
   };
 
+  const toFloat = (v: unknown) => {
+    if (v === "" || v === null || v === undefined) return undefined;
+    const n = Number(v);
+    return Number.isNaN(n) ? undefined : n;
+  };
+
   const data: Record<string, unknown> = {};
   const intFields = [
     "atk",
@@ -32,10 +38,17 @@ export async function POST(req: NextRequest) {
     "exclusiveGearHpPct",
     "exclusiveGearLethalityPct",
   ];
+  const floatFields = ["expeditionAtkPct", "expeditionDefPct"];
 
   for (const f of intFields) {
     if (body[f] !== undefined) {
       const v = toInt(body[f]);
+      if (v !== undefined) data[f] = v;
+    }
+  }
+  for (const f of floatFields) {
+    if (body[f] !== undefined) {
+      const v = toFloat(body[f]);
       if (v !== undefined) data[f] = v;
     }
   }
@@ -45,8 +58,11 @@ export async function POST(req: NextRequest) {
     data,
   });
 
-  // skills配列が渡された場合、その英雄のスキルとしてまとめて追加する
+  // skills配列が渡された場合、その英雄の既存スキルを全て削除してから登録し直す
+  // (同じデータを複数回送っても重複登録されないようにするため)
   if (Array.isArray(body.skills)) {
+    await prisma.heroSkill.deleteMany({ where: { heroId: existing.id } });
+
     const toIntOrNull = (v: unknown) => {
       if (v === "" || v === null || v === undefined) return null;
       const n = Number(v);
