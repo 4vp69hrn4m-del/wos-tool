@@ -34,6 +34,10 @@ type Formation = {
   shieldHeroName: string | null;
   spearHeroName: string | null;
   bowHeroName: string | null;
+  infantryPct: number | null;
+  cavalryPct: number | null;
+  archerPct: number | null;
+  troopCount: number | null;
   equipShieldAtkPct: number | null;
   equipShieldDefPct: number | null;
   equipSpearAtkPct: number | null;
@@ -180,11 +184,158 @@ function finalStats(
   return result;
 }
 
+// 1人分の最終ステータス(部隊シミュレーション用。上のfinalStatsは英雄3人分の合計値)
+function heroFinalStat(
+  hero: Hero,
+  formation: Formation | null,
+  opponentHeroes: Hero[],
+  opponentFormation: Formation | null,
+  stat: StatKey
+): number {
+  const base = hero[stat] ?? 0;
+  const additivePct = equipGemAdditivePct(hero, formation, stat) + heroSkillAdditivePct(hero, stat);
+  const multPct = multiplicativePct(hero, formation, stat);
+  const debuffPct = enemyDebuffPct(opponentHeroes, opponentFormation, stat);
+  return (base * (1 + additivePct / 100) * (1 + multPct / 100)) / (1 + debuffPct / 100);
+}
+
+type TroopType = "shield" | "spear" | "bow";
+type TroopGroup = {
+  type: TroopType;
+  label: string;
+  count: number;
+  atkPerSoldier: number;
+  defPerSoldier: number;
+  hpPerSoldier: number;
+  lethalityPerSoldier: number;
+  hpPool: number;
+};
+
+const troopOrder: TroopType[] = ["shield", "spear", "bow"];
+const troopTypeLabel: Record<TroopType, string> = {
+  shield: "盾兵",
+  spear: "槍兵",
+  bow: "弓兵",
+};
+
+function buildTroopGroups(
+  heroes: Hero[],
+  formation: Formation | null,
+  opponentHeroes: Hero[],
+  opponentFormation: Formation | null
+): TroopGroup[] {
+  if (!formation || !formation.troopCount) return [];
+  const defs: [TroopType, string | null, number | null][] = [
+    ["shield", formation.shieldHeroName, formation.infantryPct],
+    ["spear", formation.spearHeroName, formation.cavalryPct],
+    ["bow", formation.bowHeroName, formation.archerPct],
+  ];
+  const groups: TroopGroup[] = [];
+  for (const [type, heroName, pct] of defs) {
+    if (!heroName || !pct) continue;
+    const hero = heroes.find((h) => h.name === heroName);
+    if (!hero) continue;
+    const count = Math.round((formation.troopCount * pct) / 100);
+    if (count <= 0) continue;
+    const atkPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "atk");
+    const defPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "def");
+    const hpPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "hp");
+    const lethalityPerSoldier = heroFinalStat(
+      hero,
+      formation,
+      opponentHeroes,
+      opponentFormation,
+      "lethality"
+    );
+    groups.push({
+      type,
+      label: troopTypeLabel[type],
+      count,
+      atkPerSoldier,
+      defPerSoldier,
+      hpPerSoldier,
+      lethalityPerSoldier,
+      hpPool: count * hpPerSoldier,
+    });
+  }
+  return groups;
+}
+
+// 仮のダメージ式(実際の式が分かったらここだけ差し替える)
+// 1回のダメージ = 攻撃力 × (1 + 殺傷力/100) × (100 ÷ (100 + 相手の防御力))
+function attackDamage(attacker: TroopGroup, defender: TroopGroup): number {
+  const perSoldier =
+    attacker.atkPerSoldier * (1 + attacker.lethalityPerSoldier / 100) *
+    (100 / (100 + defender.defPerSoldier));
+  return perSoldier * attacker.count;
+}
+
+// 盾→槍→弓の順で、最初に生き残っているグループを狙う
+function pickTarget(groups: TroopGroup[]): TroopGroup | null {
+  for (const t of troopOrder) {
+    const g = groups.find((g) => g.type === t && g.count > 0);
+    if (g) return g;
+  }
+  return null;
+}
+
+function applyDamage(target: TroopGroup, damage: number) {
+  target.hpPool = Math.max(0, target.hpPool - damage);
+  target.count = target.hpPerSoldier > 0 ? Math.floor(target.hpPool / target.hpPerSoldier) : 0;
+}
+
+function isWiped(groups: TroopGroup[]): boolean {
+  return groups.every((g) => g.count <= 0);
+}
+
+type BattleResult = {
+  winner: "self" | "opponent" | "draw";
+  turns: number;
+  selfGroups: TroopGroup[];
+  opponentGroups: TroopGroup[];
+};
+
+function simulateBattle(selfGroups: TroopGroup[], opponentGroups: TroopGroup[]): BattleResult {
+  const self = selfGroups.map((g) => ({ ...g }));
+  const opponent = opponentGroups.map((g) => ({ ...g }));
+  const maxTurns = 500;
+  let turn = 0;
+
+  while (turn < maxTurns) {
+    if (isWiped(self) || isWiped(opponent)) break;
+    turn++;
+    for (const t of troopOrder) {
+      const attacker = self.find((g) => g.type === t);
+      if (attacker && attacker.count > 0) {
+        const target = pickTarget(opponent);
+        if (target) applyDamage(target, attackDamage(attacker, target));
+      }
+      if (isWiped(opponent)) break;
+
+      const opponentAttacker = opponent.find((g) => g.type === t);
+      if (opponentAttacker && opponentAttacker.count > 0) {
+        const target = pickTarget(self);
+        if (target) applyDamage(target, attackDamage(opponentAttacker, target));
+      }
+      if (isWiped(self)) break;
+    }
+  }
+
+  const selfAlive = !isWiped(self);
+  const opponentAlive = !isWiped(opponent);
+  let winner: "self" | "opponent" | "draw" = "draw";
+  if (selfAlive && !opponentAlive) winner = "self";
+  else if (!selfAlive && opponentAlive) winner = "opponent";
+
+  return { winner, turns: turn, selfGroups: self, opponentGroups: opponent };
+}
+
 export default function SimulatePage() {
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [formations, setFormations] = useState<Formation[]>([]);
   const [selfId, setSelfId] = useState("");
   const [opponentId, setOpponentId] = useState("");
+  const [battleResult, setBattleResult] = useState<BattleResult | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -223,6 +374,17 @@ export default function SimulatePage() {
     if (selfWins > opponentWins) verdict = "有利";
     else if (selfWins < opponentWins) verdict = "不利";
     else verdict = "互角";
+  }
+
+  function runBattle() {
+    const selfGroups = buildTroopGroups(selfHeroes, selfFormation, opponentHeroes, opponentFormation);
+    const opponentGroups = buildTroopGroups(
+      opponentHeroes,
+      opponentFormation,
+      selfHeroes,
+      selfFormation
+    );
+    setBattleResult(simulateBattle(selfGroups, opponentGroups));
   }
 
   return (
@@ -291,6 +453,70 @@ export default function SimulatePage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {showResult && (
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>ターン制戦闘シミュレーション(β)</h2>
+          <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+            両編成に兵士数・兵種割合(歩兵%/騎兵%/弓兵%)が登録されている必要があります。ダメージ式は仮のものです(攻撃力×(1+殺傷力/100)×100÷(100+相手の防御力))。
+          </p>
+          <button onClick={runBattle}>シミュレーション実行</button>
+
+          {battleResult && (
+            <div style={{ marginTop: 16 }}>
+              <h3 style={{ marginTop: 0 }}>
+                結果:{" "}
+                <span
+                  style={{
+                    color:
+                      battleResult.winner === "self"
+                        ? "#38bdf8"
+                        : battleResult.winner === "opponent"
+                        ? "#f87171"
+                        : "#94a3b8",
+                  }}
+                >
+                  {battleResult.winner === "self"
+                    ? "自分の勝利"
+                    : battleResult.winner === "opponent"
+                    ? "相手の勝利"
+                    : "決着つかず(500ターン到達)"}
+                </span>{" "}
+                / {battleResult.turns}ターン
+              </h3>
+
+              <div className="row">
+                <div>
+                  <strong>自分の残存兵力</strong>
+                  {battleResult.selfGroups.length === 0 && (
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      兵士数・兵種割合が未登録です。
+                    </p>
+                  )}
+                  {battleResult.selfGroups.map((g) => (
+                    <div key={g.type} style={{ fontSize: "0.9rem" }}>
+                      {g.label}: {g.count}人
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <strong>相手の残存兵力</strong>
+                  {battleResult.opponentGroups.length === 0 && (
+                    <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+                      兵士数・兵種割合が未登録です。
+                    </p>
+                  )}
+                  {battleResult.opponentGroups.map((g) => (
+                    <div key={g.type} style={{ fontSize: "0.9rem" }}>
+                      {g.label}: {g.count}人
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
