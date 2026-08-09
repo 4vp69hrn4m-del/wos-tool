@@ -27,6 +27,10 @@ model Hero {
   exclusiveGearHpPct        Int?
   exclusiveGearLethalityPct Int?
 
+  // 遠征ステータス上昇(%・兵種ごとの攻撃力・防御力。世代で共通の値、小数あり)
+  expeditionAtkPct Float?
+  expeditionDefPct Float?
+
   notes     String?
   createdAt DateTime @default(now())
 }
