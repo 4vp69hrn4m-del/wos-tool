@@ -29,8 +29,6 @@ export async function POST(req: NextRequest) {
     "hp",
     "lethality",
     "generation",
-    "exclusiveGearAtkPct",
-    "exclusiveGearDefPct",
     "exclusiveGearHpPct",
     "exclusiveGearLethalityPct",
   ];
