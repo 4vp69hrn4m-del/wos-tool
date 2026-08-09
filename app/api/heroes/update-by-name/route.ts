@@ -23,7 +23,17 @@ export async function POST(req: NextRequest) {
   };
 
   const data: Record<string, unknown> = {};
-  const intFields = ["atk", "def", "hp", "lethality", "generation"];
+  const intFields = [
+    "atk",
+    "def",
+    "hp",
+    "lethality",
+    "generation",
+    "exclusiveGearAtkPct",
+    "exclusiveGearDefPct",
+    "exclusiveGearHpPct",
+    "exclusiveGearLethalityPct",
+  ];
 
   for (const f of intFields) {
     if (body[f] !== undefined) {
