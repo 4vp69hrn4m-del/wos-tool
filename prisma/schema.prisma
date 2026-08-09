@@ -45,12 +45,13 @@ model HeroSkill {
   triggerValue Int? // chanceなら確率(%)、everyNTurns/everyNAttacksならN
   requiredTroopType String? // このスキルが発動するために連れて行く必要がある兵種("歩兵"/"騎兵"/"弓兵"。nullなら兵種を問わず常に発動)
 
-  // 効果
-  target       String // "self"(自分/味方全体が対象) / "enemy"(敵全体が対象)
-  stat         String // "atk" / "def" / "hp" / "lethality"
-  value        Int    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
+  // 効果(計算に使える単純な効果のみ。会心・シールド・連鎖効果など複雑なものはrawTextへ)
+  target       String? // "self"(自分/味方全体が対象) / "enemy"(敵全体が対象)
+  stat         String? // "atk" / "def" / "hp" / "lethality"
+  value        Int?    // パーセント(常にプラスの数値。上昇/下降はtargetで決まる)
   durationTurns Int? // 発動後、何ターン効果が持続するか(nullなら常時 or 即時)
   targetTroopType String? // このスキルが狙う兵種("歩兵"/"騎兵"/"弓兵"。nullなら対象兵種を問わない)
+  rawText String? // 会心確率・シールド・連鎖効果など、計算にまだ組み込めない効果の正確な文章をここに保存しておく
 
   createdAt DateTime @default(now())
 }
