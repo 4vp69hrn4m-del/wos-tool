@@ -18,6 +18,8 @@ type Formation = {
   cavalryPct: number | null;
   archerPct: number | null;
   troopCount: number | null;
+  diamondBuffActive: boolean;
+  petBuffActive: boolean;
   equipmentNote: string | null;
   createdAt: string;
 };
@@ -106,6 +108,8 @@ export default function FormationsPage() {
   const [form, setForm] = useState(emptyForm);
   const [equipStats, setEquipStats] = useState<Record<string, string>>({});
   const [gemStats, setGemStats] = useState<Record<string, string>>({});
+  const [diamondBuffActive, setDiamondBuffActive] = useState(false);
+  const [petBuffActive, setPetBuffActive] = useState(false);
   const [list, setList] = useState<Formation[]>([]);
   const [heroes, setHeroes] = useState<Hero[]>([]);
   const [experts, setExperts] = useState<Expert[]>([]);
@@ -136,7 +140,11 @@ export default function FormationsPage() {
   async function submit() {
     setLoading(true);
     try {
-      const body: Record<string, unknown> = { ...form };
+      const body: Record<string, unknown> = {
+        ...form,
+        diamondBuffActive,
+        petBuffActive,
+      };
       for (const [troopKey] of troopRows) {
         const troopCapKey = troopKey.charAt(0).toUpperCase() + troopKey.slice(1);
         for (const [statKey] of equipCols) {
@@ -159,6 +167,8 @@ export default function FormationsPage() {
       setForm(emptyForm);
       setEquipStats({});
       setGemStats({});
+      setDiamondBuffActive(false);
+      setPetBuffActive(false);
       await loadAll();
     } finally {
       setLoading(false);
@@ -306,6 +316,28 @@ export default function FormationsPage() {
           onChange={(k, v) => setGemStats((prev) => ({ ...prev, [k]: v }))}
         />
 
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+          乗算バフ(誰でも同じ固定%が適用されます)
+        </p>
+        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={diamondBuffActive}
+            onChange={(e) => setDiamondBuffActive(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          ダイヤバフ使用(自分は攻撃力/防御力/HP/殺傷力+20%、相手は攻撃力/防御力-20%)
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+          <input
+            type="checkbox"
+            checked={petBuffActive}
+            onChange={(e) => setPetBuffActive(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          ペットバフ使用(自分は攻撃力/防御力/HP/殺傷力+10%、相手はHP/殺傷力-5%・防御力-10%)
+        </label>
+
         <label style={{ marginTop: 16 }}>装備メモ(自由記述・後で構造化予定)</label>
         <input
           value={form.equipmentNote}
@@ -341,6 +373,10 @@ export default function FormationsPage() {
             <div>
               兵種割合: 歩{f.infantryPct ?? "-"}% 騎{f.cavalryPct ?? "-"}% 弓
               {f.archerPct ?? "-"}% / 兵士数: {f.troopCount ?? "-"}
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
+              ダイヤバフ: {f.diamondBuffActive ? "使用" : "未使用"} / ペットバフ:{" "}
+              {f.petBuffActive ? "使用" : "未使用"}
             </div>
             {f.equipmentNote && <div>装備メモ: {f.equipmentNote}</div>}
           </div>
