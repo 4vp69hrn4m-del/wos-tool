@@ -53,10 +53,12 @@ export async function POST(req: NextRequest) {
           skillSlot: toIntOrNull(s.skillSlot) || 1,
           triggerType: s.triggerType,
           triggerValue: toIntOrNull(s.triggerValue),
+          requiredTroopType: s.requiredTroopType || null,
           target: s.target,
           stat: s.stat,
           value: toIntOrNull(s.value) || 0,
           durationTurns: toIntOrNull(s.durationTurns),
+          targetTroopType: s.targetTroopType || null,
         },
       });
     }
