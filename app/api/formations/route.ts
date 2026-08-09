@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       gemSpearHpPct: toInt(body.gemSpearHpPct),
       gemBowLethalityPct: toInt(body.gemBowLethalityPct),
       gemBowHpPct: toInt(body.gemBowHpPct),
+      diamondBuffActive: !!body.diamondBuffActive,
+      petBuffActive: !!body.petBuffActive,
       equipmentNote: body.equipmentNote || null,
     },
   });
