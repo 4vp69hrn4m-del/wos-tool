@@ -58,11 +58,9 @@ export async function POST(req: NextRequest) {
     data,
   });
 
-  // skills配列が渡された場合、その英雄の既存スキルを全て削除してから登録し直す
-  // (同じデータを複数回送っても重複登録されないようにするため)
+  // skills配列が渡された場合、同じ名前の既存スキルだけ削除してから登録し直す
+  // (このAPIが送ってきた分だけを上書きし、他の手段で登録された別のスキル名は残す)
   if (Array.isArray(body.skills)) {
-    await prisma.heroSkill.deleteMany({ where: { heroId: existing.id } });
-
     const toIntOrNull = (v: unknown) => {
       if (v === "" || v === null || v === undefined) return null;
       const n = Number(v);
@@ -70,6 +68,9 @@ export async function POST(req: NextRequest) {
     };
     for (const s of body.skills) {
       if (!s.name || !s.triggerType) continue;
+      await prisma.heroSkill.deleteMany({
+        where: { heroId: existing.id, name: s.name },
+      });
       await prisma.heroSkill.create({
         data: {
           heroId: existing.id,
