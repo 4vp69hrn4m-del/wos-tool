@@ -18,22 +18,25 @@ export async function PATCH(
     return Number.isNaN(n) ? null : n;
   };
 
-  const hero = await prisma.hero.update({
+  const data: Record<string, unknown> = {};
+  if (body.name !== undefined) data.name = body.name;
+  if (body.skillSlot !== undefined) data.skillSlot = toInt(body.skillSlot) || 1;
+  if (body.triggerType !== undefined) data.triggerType = body.triggerType;
+  if (body.triggerValue !== undefined) data.triggerValue = toInt(body.triggerValue);
+  if (body.requiredTroopType !== undefined) data.requiredTroopType = body.requiredTroopType || null;
+  if (body.target !== undefined) data.target = body.target || null;
+  if (body.stat !== undefined) data.stat = body.stat || null;
+  if (body.value !== undefined) data.value = toInt(body.value);
+  if (body.durationTurns !== undefined) data.durationTurns = toInt(body.durationTurns);
+  if (body.targetTroopType !== undefined) data.targetTroopType = body.targetTroopType || null;
+  if (body.rawText !== undefined) data.rawText = body.rawText || null;
+
+  const skill = await prisma.heroSkill.update({
     where: { id },
-    data: {
-      name: body.name,
-      troopType: body.troopType,
-      generation: toInt(body.generation),
-      atk: toInt(body.atk),
-      def: toInt(body.def),
-      hp: toInt(body.hp),
-      lethality: toInt(body.lethality),
-      exclusiveGearHpPct: toInt(body.exclusiveGearHpPct),
-      exclusiveGearLethalityPct: toInt(body.exclusiveGearLethalityPct),
-      notes: body.notes || null,
-    },
+    data,
   });
-  return NextResponse.json(hero);
+
+  return NextResponse.json(skill);
 }
 
 export async function DELETE(
@@ -47,6 +50,6 @@ export async function DELETE(
   if (Number.isNaN(id)) {
     return NextResponse.json({ error: "invalid id" }, { status: 400 });
   }
-  await prisma.hero.delete({ where: { id } });
+  await prisma.heroSkill.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
