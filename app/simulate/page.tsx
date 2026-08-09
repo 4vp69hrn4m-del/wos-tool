@@ -47,7 +47,6 @@ type Formation = {
 };
 
 type Stats = { atk: number; def: number; hp: number; lethality: number };
-type Effect = { stat: string; value: number; target: string };
 type StatKey = keyof Stats;
 
 const statLabel: Record<string, string> = {
@@ -82,46 +81,6 @@ function statSuffix(stat: StatKey): string {
   return "Lethality";
 }
 
-// 領主装備(攻撃力・防御力のみ)・領主宝石(殺傷力・HPのみ)の%を、
-// 英雄の兵種に応じて乗算で反映する
-function equipGemMultiplier(hero: Hero, formation: Formation, stat: StatKey): number {
-  const prefix = troopPrefix(hero.troopType);
-  const suffix = statSuffix(stat);
-  let equipPct = 0;
-  let gemPct = 0;
-  if (stat === "atk" || stat === "def") {
-    const equipKey = `equip${prefix}${suffix}Pct` as keyof Formation;
-    equipPct = (formation[equipKey] as number | null) ?? 0;
-  } else {
-    const gemKey = `gem${prefix}${suffix}Pct` as keyof Formation;
-    gemPct = (formation[gemKey] as number | null) ?? 0;
-  }
-  return (1 + equipPct / 100) * (1 + gemPct / 100);
-}
-
-function adjustedBaseStats(hs: Hero[], formation: Formation | null): Stats {
-  return hs.reduce(
-    (sum, h) => {
-      if (!formation) {
-        return {
-          atk: sum.atk + (h.atk ?? 0),
-          def: sum.def + (h.def ?? 0),
-          hp: sum.hp + (h.hp ?? 0),
-          lethality: sum.lethality + (h.lethality ?? 0),
-        };
-      }
-      return {
-        atk: sum.atk + (h.atk ?? 0) * equipGemMultiplier(h, formation, "atk"),
-        def: sum.def + (h.def ?? 0) * equipGemMultiplier(h, formation, "def"),
-        hp: sum.hp + (h.hp ?? 0) * equipGemMultiplier(h, formation, "hp"),
-        lethality:
-          sum.lethality + (h.lethality ?? 0) * equipGemMultiplier(h, formation, "lethality"),
-      };
-    },
-    { atk: 0, def: 0, hp: 0, lethality: 0 }
-  );
-}
-
 // 発動条件に応じて「平均的にはどれくらいの効果か」を期待値で計算する。
 // 常時発動やターン制の効果は、本格的なターン制シミュレーターができるまでの
 // 暫定として満額で計算し、確率発動のみ期待値(値×確率)で割り引く。
@@ -133,26 +92,62 @@ function effectiveValue(s: HeroSkill): number {
   return s.value;
 }
 
-function collectEffects(hs: Hero[]): Effect[] {
-  const effects: Effect[] = [];
-  for (const h of hs) {
-    for (const s of h.skills) {
-      effects.push({ target: s.target, stat: s.stat, value: effectiveValue(s) });
-    }
+// 領主装備・領主宝石の%(兵種ごと、加算バフ扱い)
+function equipGemAdditivePct(hero: Hero, formation: Formation | null, stat: StatKey): number {
+  if (!formation) return 0;
+  const prefix = troopPrefix(hero.troopType);
+  const suffix = statSuffix(stat);
+  if (stat === "atk" || stat === "def") {
+    const key = `equip${prefix}${suffix}Pct` as keyof Formation;
+    return (formation[key] as number | null) ?? 0;
   }
-  return effects;
+  const key = `gem${prefix}${suffix}Pct` as keyof Formation;
+  return (formation[key] as number | null) ?? 0;
 }
 
-function applyEffects(base: Stats, selfEffects: Effect[], enemyEffects: Effect[]): Stats {
-  const result = { ...base };
+// 英雄スキル(自分upのみ)の%の合計(加算バフ扱い)
+function heroSkillAdditivePct(hero: Hero, stat: StatKey): number {
+  return hero.skills
+    .filter((s) => s.target === "self" && s.stat === stat)
+    .reduce((sum, s) => sum + effectiveValue(s), 0);
+}
+
+// 専用装備・ダイヤバフ・ペットスキル・霜竜石塔などの乗算バフ。
+// まだ登録する仕組みがないため、今は常に0(効果なし)として扱う暫定実装。
+function multiplicativePct(): number {
+  return 0;
+}
+
+// 相手側の英雄スキル(敵downのみ)の%の合計(デバフ扱い)
+function enemyDebuffPct(opponentHeroes: Hero[], stat: StatKey): number {
+  return opponentHeroes.reduce(
+    (sum, h) =>
+      sum +
+      h.skills
+        .filter((s) => s.target === "enemy" && s.stat === stat)
+        .reduce((s2, sk) => s2 + effectiveValue(sk), 0),
+    0
+  );
+}
+
+// 最終値 = 基礎値 × (100%+加算バフ計) × (100%+乗算バフ計) ÷ (100%+デバフ計)
+function finalStats(
+  heroes: Hero[],
+  formation: Formation | null,
+  opponentHeroes: Hero[]
+): Stats {
+  const result: Stats = { atk: 0, def: 0, hp: 0, lethality: 0 };
   (Object.keys(result) as StatKey[]).forEach((stat) => {
-    const boost = selfEffects
-      .filter((e) => e.target === "self" && e.stat === stat)
-      .reduce((sum, e) => sum + e.value, 0);
-    const debuff = enemyEffects
-      .filter((e) => e.target === "enemy" && e.stat === stat)
-      .reduce((sum, e) => sum + e.value, 0);
-    result[stat] = Math.round(result[stat] * (1 + boost / 100) * (1 - debuff / 100));
+    const debuffPct = enemyDebuffPct(opponentHeroes, stat);
+    let total = 0;
+    for (const h of heroes) {
+      const base = h[stat] ?? 0;
+      const additivePct = equipGemAdditivePct(h, formation, stat) + heroSkillAdditivePct(h, stat);
+      const multPct = multiplicativePct();
+      total +=
+        (base * (1 + additivePct / 100) * (1 + multPct / 100)) / (1 + debuffPct / 100);
+    }
+    result[stat] = Math.round(total);
   });
   return result;
 }
@@ -181,14 +176,8 @@ export default function SimulatePage() {
   const selfHeroes = getHeroesInFormation(selfFormation, heroes);
   const opponentHeroes = getHeroesInFormation(opponentFormation, heroes);
 
-  const selfBase = adjustedBaseStats(selfHeroes, selfFormation);
-  const opponentBase = adjustedBaseStats(opponentHeroes, opponentFormation);
-
-  const selfEffects = collectEffects(selfHeroes);
-  const opponentEffects = collectEffects(opponentHeroes);
-
-  const selfFinal = applyEffects(selfBase, selfEffects, opponentEffects);
-  const opponentFinal = applyEffects(opponentBase, opponentEffects, selfEffects);
+  const selfFinal = finalStats(selfHeroes, selfFormation, opponentHeroes);
+  const opponentFinal = finalStats(opponentHeroes, opponentFormation, selfHeroes);
 
   const showResult = selfFormation && opponentFormation;
 
@@ -212,7 +201,7 @@ export default function SimulatePage() {
     <div>
       <h1>編成シミュレーター(簡易版)</h1>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        英雄の基礎ステータス・スキル効果(確率発動は期待値で計算)・領主装備・領主宝石(兵種ごとに乗算)を使った参考スコアです。ターン制の本格シミュレーターは開発中です。専門家・ペット・兵種比率・実戦データはまだ反映していません。
+        最終値 = 基礎値×(100%+加算バフ)×(100%+乗算バフ)÷(100%+デバフ)で計算しています。加算バフ=領主装備・領主宝石・英雄スキル、デバフ=相手英雄スキル。専用装備・ダイヤバフ・ペットスキルなどの乗算バフはまだ登録する仕組みがなく、今は0として計算しています。ターン制の本格シミュレーターは開発中です。
       </p>
 
       <div className="card">
