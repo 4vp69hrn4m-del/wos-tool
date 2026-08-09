@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-  const hero = await prisma.hero.findFirst({ where: { name: 'フレンダー-' } });
+  const hero = await prisma.hero.findFirst({ where: { name: 'フレンダ―' } });
   if (!hero) {
     console.log('見つかりません');
     await prisma.$disconnect();
