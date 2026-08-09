@@ -12,9 +12,9 @@ export async function POST(
   const heroId = Number(params.id);
   const body = await req.json();
 
-  if (!body.name || !body.triggerType || !body.target || !body.stat) {
+  if (!body.name || !body.triggerType) {
     return NextResponse.json(
-      { error: "name, triggerType, target, stat is required" },
+      { error: "name, triggerType is required" },
       { status: 400 }
     );
   }
@@ -33,11 +33,12 @@ export async function POST(
       triggerType: body.triggerType,
       triggerValue: toInt(body.triggerValue),
       requiredTroopType: body.requiredTroopType || null,
-      target: body.target,
-      stat: body.stat,
-      value: toInt(body.value) || 0,
+      target: body.target || null,
+      stat: body.stat || null,
+      value: toInt(body.value),
       durationTurns: toInt(body.durationTurns),
       targetTroopType: body.targetTroopType || null,
+      rawText: body.rawText || null,
     },
   });
 
