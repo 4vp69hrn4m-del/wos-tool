@@ -32,10 +32,12 @@ export async function POST(
       skillSlot: toInt(body.skillSlot) || 1,
       triggerType: body.triggerType,
       triggerValue: toInt(body.triggerValue),
+      requiredTroopType: body.requiredTroopType || null,
       target: body.target,
       stat: body.stat,
       value: toInt(body.value) || 0,
       durationTurns: toInt(body.durationTurns),
+      targetTroopType: body.targetTroopType || null,
     },
   });
 
