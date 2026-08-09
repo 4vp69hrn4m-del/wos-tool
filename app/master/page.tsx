@@ -364,16 +364,6 @@ export default function MasterPage() {
             <input value={heroDef} onChange={(e) => setHeroDef(e.target.value)} />
           </div>
         </div>
-        <div className="row">
-          <div>
-            <label>体力(HP)</label>
-            <input value={heroHp} onChange={(e) => setHeroHp(e.target.value)} />
-          </div>
-          <div>
-            <label>殺傷力</label>
-            <input value={heroLethality} onChange={(e) => setHeroLethality(e.target.value)} />
-          </div>
-        </div>
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
           専用装備によるステータス上昇(%・乗算バフ・殺傷力とHPのみ)
