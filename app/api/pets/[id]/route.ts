@@ -16,3 +16,4 @@ export async function DELETE(
   await prisma.pet.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
+
