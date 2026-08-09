@@ -21,6 +21,10 @@ type Hero = {
   def: number | null;
   hp: number | null;
   lethality: number | null;
+  exclusiveGearAtkPct: number | null;
+  exclusiveGearDefPct: number | null;
+  exclusiveGearHpPct: number | null;
+  exclusiveGearLethalityPct: number | null;
   skills: HeroSkill[];
 };
 
@@ -44,6 +48,8 @@ type Formation = {
   gemSpearHpPct: number | null;
   gemBowLethalityPct: number | null;
   gemBowHpPct: number | null;
+  diamondBuffActive: boolean;
+  petBuffActive: boolean;
 };
 
 type Stats = { atk: number; def: number; hp: number; lethality: number };
@@ -55,6 +61,12 @@ const statLabel: Record<string, string> = {
   hp: "HP",
   lethality: "殺傷力",
 };
+
+// ダイヤバフ・ペットバフは、誰が使っても同じ固定%(教えてもらった実測値)
+const DIAMOND_SELF_PCT = 20; // 自分側: 攻撃力/防御力/HP/殺傷力 全部+20%
+const DIAMOND_ENEMY_DEBUFF: Partial<Record<StatKey, number>> = { atk: 20, def: 20 };
+const PET_SELF_PCT = 10; // 自分側: 攻撃力/防御力/HP/殺傷力 全部+10%
+const PET_ENEMY_DEBUFF: Partial<Record<StatKey, number>> = { hp: 5, lethality: 5, def: 10 };
 
 function getHeroesInFormation(formation: Formation | null, heroes: Hero[]): Hero[] {
   if (!formation) return [];
@@ -79,6 +91,13 @@ function statSuffix(stat: StatKey): string {
   if (stat === "def") return "Def";
   if (stat === "hp") return "Hp";
   return "Lethality";
+}
+
+function exclusiveGearField(stat: StatKey): keyof Hero {
+  if (stat === "atk") return "exclusiveGearAtkPct";
+  if (stat === "def") return "exclusiveGearDefPct";
+  if (stat === "hp") return "exclusiveGearHpPct";
+  return "exclusiveGearLethalityPct";
 }
 
 // 発動条件に応じて「平均的にはどれくらいの効果か」を期待値で計算する。
@@ -112,15 +131,21 @@ function heroSkillAdditivePct(hero: Hero, stat: StatKey): number {
     .reduce((sum, s) => sum + effectiveValue(s), 0);
 }
 
-// 専用装備・ダイヤバフ・ペットスキル・霜竜石塔などの乗算バフ。
-// まだ登録する仕組みがないため、今は常に0(効果なし)として扱う暫定実装。
-function multiplicativePct(): number {
-  return 0;
+// 専用装備・ダイヤバフ・ペットバフの合計(乗算バフ扱い)
+function multiplicativePct(hero: Hero, formation: Formation | null, stat: StatKey): number {
+  const gearPct = (hero[exclusiveGearField(stat)] as number | null) ?? 0;
+  const diamondPct = formation?.diamondBuffActive ? DIAMOND_SELF_PCT : 0;
+  const petPct = formation?.petBuffActive ? PET_SELF_PCT : 0;
+  return gearPct + diamondPct + petPct;
 }
 
-// 相手側の英雄スキル(敵downのみ)の%の合計(デバフ扱い)
-function enemyDebuffPct(opponentHeroes: Hero[], stat: StatKey): number {
-  return opponentHeroes.reduce(
+// 相手側の英雄スキル・ダイヤバフ・ペットバフの合計(デバフ扱い)
+function enemyDebuffPct(
+  opponentHeroes: Hero[],
+  opponentFormation: Formation | null,
+  stat: StatKey
+): number {
+  const skillDebuff = opponentHeroes.reduce(
     (sum, h) =>
       sum +
       h.skills
@@ -128,22 +153,27 @@ function enemyDebuffPct(opponentHeroes: Hero[], stat: StatKey): number {
         .reduce((s2, sk) => s2 + effectiveValue(sk), 0),
     0
   );
+  const diamondDebuff =
+    opponentFormation?.diamondBuffActive ? DIAMOND_ENEMY_DEBUFF[stat] ?? 0 : 0;
+  const petDebuff = opponentFormation?.petBuffActive ? PET_ENEMY_DEBUFF[stat] ?? 0 : 0;
+  return skillDebuff + diamondDebuff + petDebuff;
 }
 
 // 最終値 = 基礎値 × (100%+加算バフ計) × (100%+乗算バフ計) ÷ (100%+デバフ計)
 function finalStats(
   heroes: Hero[],
   formation: Formation | null,
-  opponentHeroes: Hero[]
+  opponentHeroes: Hero[],
+  opponentFormation: Formation | null
 ): Stats {
   const result: Stats = { atk: 0, def: 0, hp: 0, lethality: 0 };
   (Object.keys(result) as StatKey[]).forEach((stat) => {
-    const debuffPct = enemyDebuffPct(opponentHeroes, stat);
+    const debuffPct = enemyDebuffPct(opponentHeroes, opponentFormation, stat);
     let total = 0;
     for (const h of heroes) {
       const base = h[stat] ?? 0;
       const additivePct = equipGemAdditivePct(h, formation, stat) + heroSkillAdditivePct(h, stat);
-      const multPct = multiplicativePct();
+      const multPct = multiplicativePct(h, formation, stat);
       total +=
         (base * (1 + additivePct / 100) * (1 + multPct / 100)) / (1 + debuffPct / 100);
     }
@@ -176,8 +206,8 @@ export default function SimulatePage() {
   const selfHeroes = getHeroesInFormation(selfFormation, heroes);
   const opponentHeroes = getHeroesInFormation(opponentFormation, heroes);
 
-  const selfFinal = finalStats(selfHeroes, selfFormation, opponentHeroes);
-  const opponentFinal = finalStats(opponentHeroes, opponentFormation, selfHeroes);
+  const selfFinal = finalStats(selfHeroes, selfFormation, opponentHeroes, opponentFormation);
+  const opponentFinal = finalStats(opponentHeroes, opponentFormation, selfHeroes, selfFormation);
 
   const showResult = selfFormation && opponentFormation;
 
@@ -201,7 +231,7 @@ export default function SimulatePage() {
     <div>
       <h1>編成シミュレーター(簡易版)</h1>
       <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-        最終値 = 基礎値×(100%+加算バフ)×(100%+乗算バフ)÷(100%+デバフ)で計算しています。加算バフ=領主装備・領主宝石・英雄スキル、デバフ=相手英雄スキル。専用装備・ダイヤバフ・ペットスキルなどの乗算バフはまだ登録する仕組みがなく、今は0として計算しています。ターン制の本格シミュレーターは開発中です。
+        最終値 = 基礎値×(100%+加算バフ)×(100%+乗算バフ)÷(100%+デバフ)で計算しています。加算バフ=領主装備・領主宝石・英雄スキル、乗算バフ=専用装備・ダイヤバフ・ペットバフ(固定%)。ダイヤバフ・ペットバフは相手側の被ダメージにも影響します。ターン制の本格シミュレーターは開発中です。
       </p>
 
       <div className="card">
