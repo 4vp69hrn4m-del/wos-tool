@@ -23,10 +23,12 @@ export async function PATCH(
   if (body.skillSlot !== undefined) data.skillSlot = toInt(body.skillSlot) || 1;
   if (body.triggerType !== undefined) data.triggerType = body.triggerType;
   if (body.triggerValue !== undefined) data.triggerValue = toInt(body.triggerValue);
+  if (body.requiredTroopType !== undefined) data.requiredTroopType = body.requiredTroopType || null;
   if (body.target !== undefined) data.target = body.target;
   if (body.stat !== undefined) data.stat = body.stat;
   if (body.value !== undefined) data.value = toInt(body.value) || 0;
   if (body.durationTurns !== undefined) data.durationTurns = toInt(body.durationTurns);
+  if (body.targetTroopType !== undefined) data.targetTroopType = body.targetTroopType || null;
 
   const skill = await prisma.heroSkill.update({
     where: { id },
