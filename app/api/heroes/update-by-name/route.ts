@@ -35,10 +35,13 @@ export async function POST(req: NextRequest) {
     "hp",
     "lethality",
     "generation",
+  ];
+  const floatFields = [
+    "expeditionAtkPct",
+    "expeditionDefPct",
     "exclusiveGearHpPct",
     "exclusiveGearLethalityPct",
   ];
-  const floatFields = ["expeditionAtkPct", "expeditionDefPct"];
 
   for (const f of intFields) {
     if (body[f] !== undefined) {
