@@ -24,8 +24,8 @@ model Hero {
   skills    HeroSkill[] // スキル(何個でも登録可能。戦闘シミュレーターの計算に使用)
 
   // 専用装備によるステータス上昇(%・乗算バフ。殺傷力・HPのみ)
-  exclusiveGearHpPct        Int?
-  exclusiveGearLethalityPct Int?
+  exclusiveGearHpPct        Float?
+  exclusiveGearLethalityPct Float?
 
   // 遠征ステータス上昇(%・兵種ごとの攻撃力・防御力。世代で共通の値、小数あり)
   expeditionAtkPct Float?
