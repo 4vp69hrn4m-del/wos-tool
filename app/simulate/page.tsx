@@ -7,9 +7,9 @@ type HeroSkill = {
   name: string;
   triggerType: string;
   triggerValue: number | null;
-  target: string;
-  stat: string;
-  value: number;
+  target: string | null;
+  stat: string | null;
+  value: number | null;
   durationTurns: number | null;
 };
 
@@ -105,11 +105,12 @@ function exclusiveGearField(stat: StatKey): keyof Hero | null {
 // 常時発動やターン制の効果は、本格的なターン制シミュレーターができるまでの
 // 暫定として満額で計算し、確率発動のみ期待値(値×確率)で割り引く。
 function effectiveValue(s: HeroSkill): number {
+  const value = s.value ?? 0;
   if (s.triggerType === "chance") {
     const chance = s.triggerValue ?? 100;
-    return (s.value * chance) / 100;
+    return (value * chance) / 100;
   }
-  return s.value;
+  return value;
 }
 
 // 領主装備・領主宝石の%(兵種ごと、加算バフ扱い)
