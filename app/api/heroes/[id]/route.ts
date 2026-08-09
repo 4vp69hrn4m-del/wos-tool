@@ -28,8 +28,6 @@ export async function PATCH(
       def: toInt(body.def),
       hp: toInt(body.hp),
       lethality: toInt(body.lethality),
-      exclusiveGearAtkPct: toInt(body.exclusiveGearAtkPct),
-      exclusiveGearDefPct: toInt(body.exclusiveGearDefPct),
       exclusiveGearHpPct: toInt(body.exclusiveGearHpPct),
       exclusiveGearLethalityPct: toInt(body.exclusiveGearLethalityPct),
       notes: body.notes || null,
