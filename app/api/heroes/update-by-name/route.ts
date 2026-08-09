@@ -72,7 +72,9 @@ export async function POST(req: NextRequest) {
     };
 
     const validSkills = body.skills.filter((s: Record<string, unknown>) => s.name && s.triggerType);
-    const names = Array.from(new Set(validSkills.map((s: Record<string, unknown>) => s.name as string)));
+    const names: string[] = Array.from(
+      new Set(validSkills.map((s: Record<string, unknown>) => s.name as string))
+    );
 
     if (names.length > 0) {
       await prisma.heroSkill.deleteMany({
