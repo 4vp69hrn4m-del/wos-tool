@@ -11,11 +11,12 @@ type HeroSkill = {
   triggerType: string; // "always" | "chance" | "everyNTurns" | "everyNAttacks"
   triggerValue: number | null;
   requiredTroopType: string | null; // 発動に必要な兵種("歩兵"/"騎兵"/"弓兵"/null)
-  target: string; // "self" | "enemy"
-  stat: string; // "atk" | "def" | "hp" | "lethality"
-  value: number;
+  target: string | null; // "self" | "enemy" | null
+  stat: string | null; // "atk" | "def" | "hp" | "lethality" | null
+  value: number | null;
   durationTurns: number | null;
   targetTroopType: string | null; // 対象の兵種("歩兵"/"騎兵"/"弓兵"/null)
+  rawText: string | null; // 計算にまだ組み込めない効果の正確な文章
 };
 
 type Hero = {
@@ -49,16 +50,24 @@ const statLabel: Record<string, string> = {
 };
 
 function describeSkill(s: HeroSkill): string {
-  const targetLabel = s.target === "self" ? "自分" : "敵";
-  const sign = s.target === "self" ? "+" : "-";
+  const required = s.requiredTroopType ? `【${s.requiredTroopType}帯同時】` : "";
   let trigger = "常時";
   if (s.triggerType === "chance") trigger = `確率${s.triggerValue ?? "?"}%`;
   else if (s.triggerType === "everyNTurns") trigger = `${s.triggerValue ?? "?"}ターンごと`;
   else if (s.triggerType === "everyNAttacks") trigger = `${s.triggerValue ?? "?"}回攻撃ごと`;
   else if (s.triggerType === "rallyOnly") trigger = "集結時のみ";
   else if (s.triggerType === "defenseOnly") trigger = "防衛時のみ";
+
+  // 計算に使える対象/ステータス/数値が無い場合は、自由記述の本文をそのまま表示する
+  if (!s.target || !s.stat || s.value === null) {
+    return `[スキル${s.skillSlot}] ${s.name}: ${required}[${trigger}] ${
+      s.rawText ? s.rawText : "(計算未対応の効果)"
+    }`;
+  }
+
+  const targetLabel = s.target === "self" ? "自分" : "敵";
+  const sign = s.target === "self" ? "+" : "-";
   const duration = s.durationTurns ? `(${s.durationTurns}ターン持続)` : "";
-  const required = s.requiredTroopType ? `【${s.requiredTroopType}帯同時】` : "";
   const targetTroop = s.targetTroopType ? `対象:${s.targetTroopType}` : "";
   return `[スキル${s.skillSlot}] ${s.name}: ${required}[${trigger}] ${targetLabel}の${
     statLabel[s.stat] || s.stat
@@ -93,6 +102,8 @@ export default function MasterPage() {
   const [skillValue, setSkillValue] = useState("");
   const [skillDuration, setSkillDuration] = useState("");
   const [skillTargetTroopType, setSkillTargetTroopType] = useState("");
+  const [skillRawText, setSkillRawText] = useState("");
+  const [skillIsRawOnly, setSkillIsRawOnly] = useState(false);
 
   const [generationFilter, setGenerationFilter] = useState("");
   const [troopFilter, setTroopFilter] = useState("");
@@ -144,6 +155,8 @@ export default function MasterPage() {
     setSkillValue("");
     setSkillDuration("");
     setSkillTargetTroopType("");
+    setSkillRawText("");
+    setSkillIsRawOnly(false);
   }
 
   function startEditHero(h: Hero) {
@@ -210,11 +223,12 @@ export default function MasterPage() {
         triggerType: skillTriggerType,
         triggerValue: skillTriggerValue,
         requiredTroopType: skillRequiredTroopType,
-        target: skillTarget,
-        stat: skillStat,
-        value: skillValue,
+        target: skillIsRawOnly ? "" : skillTarget,
+        stat: skillIsRawOnly ? "" : skillStat,
+        value: skillIsRawOnly ? "" : skillValue,
         durationTurns: skillDuration,
         targetTroopType: skillTargetTroopType,
+        rawText: skillRawText,
       }),
     });
     if (!res) return;
@@ -458,6 +472,36 @@ export default function MasterPage() {
               <option value="3">スキル3</option>
             </select>
 
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+              <input
+                type="checkbox"
+                checked={skillIsRawOnly}
+                onChange={(e) => setSkillIsRawOnly(e.target.checked)}
+                style={{ width: "auto" }}
+              />
+              自由記述のみ(会心・シールドなど、まだ計算に組み込めない効果はこちらへ)
+            </label>
+
+            {skillIsRawOnly && (
+              <>
+                <label>スキル本文(正確な効果の文章をそのまま記録)</label>
+                <textarea
+                  value={skillRawText}
+                  onChange={(e) => setSkillRawText(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid #334155",
+                    background: "#0f172a",
+                    color: "#e2e8f0",
+                    fontSize: "1rem",
+                  }}
+                />
+              </>
+            )}
+
             <div className="row">
               <div>
                 <label>発動条件</label>
@@ -503,54 +547,53 @@ export default function MasterPage() {
               <option value="弓兵">弓兵(弓)を連れている時のみ</option>
             </select>
 
-            <div className="row">
-              <div>
-                <label>対象</label>
-                <select value={skillTarget} onChange={(e) => setSkillTarget(e.target.value)}>
-                  <option value="self">自分(上昇)</option>
-                  <option value="enemy">敵(下降)</option>
-                </select>
-              </div>
-              <div>
-                <label>ステータス</label>
-                <select value={skillStat} onChange={(e) => setSkillStat(e.target.value)}>
-                  <option value="atk">攻撃力</option>
-                  <option value="def">防御力</option>
-                  <option value="hp">HP</option>
-                  <option value="lethality">殺傷力</option>
-                </select>
-              </div>
-            </div>
+            {!skillIsRawOnly && (
+              <>
+                <div className="row">
+                  <div>
+                    <label>対象</label>
+                    <select value={skillTarget} onChange={(e) => setSkillTarget(e.target.value)}>
+                      <option value="self">自分(上昇)</option>
+                      <option value="enemy">敵(下降)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>ステータス</label>
+                    <select value={skillStat} onChange={(e) => setSkillStat(e.target.value)}>
+                      <option value="atk">攻撃力</option>
+                      <option value="def">防御力</option>
+                      <option value="hp">HP</option>
+                      <option value="lethality">殺傷力</option>
+                    </select>
+                  </div>
+                </div>
 
-            <label>対象の兵種(このスキルが狙う兵種。指定なしなら兵種を問わない)</label>
-            <select
-              value={skillTargetTroopType}
-              onChange={(e) => setSkillTargetTroopType(e.target.value)}
-            >
-              <option value="">指定なし</option>
-              <option value="歩兵">歩兵(盾)を狙う</option>
-              <option value="騎兵">騎兵(槍)を狙う</option>
-              <option value="弓兵">弓兵(弓)を狙う</option>
-            </select>
+                <label>対象の兵種(このスキルが狙う兵種。指定なしなら兵種を問わない)</label>
+                <select
+                  value={skillTargetTroopType}
+                  onChange={(e) => setSkillTargetTroopType(e.target.value)}
+                >
+                  <option value="">指定なし</option>
+                  <option value="歩兵">歩兵(盾)を狙う</option>
+                  <option value="騎兵">騎兵(槍)を狙う</option>
+                  <option value="弓兵">弓兵(弓)を狙う</option>
+                </select>
 
-            <div className="row">
-              <div>
                 <label>値(%)</label>
                 <input
                   value={skillValue}
                   onChange={(e) => setSkillValue(e.target.value)}
                   placeholder="例: 25"
                 />
-              </div>
-              <div>
-                <label>持続ターン数(任意)</label>
-                <input
-                  value={skillDuration}
-                  onChange={(e) => setSkillDuration(e.target.value)}
-                  placeholder="例: 2"
-                />
-              </div>
-            </div>
+              </>
+            )}
+
+            <label>持続ターン数(任意)</label>
+            <input
+              value={skillDuration}
+              onChange={(e) => setSkillDuration(e.target.value)}
+              placeholder="例: 2"
+            />
 
             <button onClick={addSkill}>このスキルを追加</button>
           </div>
