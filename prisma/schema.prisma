@@ -23,9 +23,7 @@ model Hero {
 
   skills    HeroSkill[] // スキル(何個でも登録可能。戦闘シミュレーターの計算に使用)
 
-  // 専用装備によるステータス上昇(%・乗算バフ)
-  exclusiveGearAtkPct       Int?
-  exclusiveGearDefPct       Int?
+  // 専用装備によるステータス上昇(%・乗算バフ。殺傷力・HPのみ)
   exclusiveGearHpPct        Int?
   exclusiveGearLethalityPct Int?
 
