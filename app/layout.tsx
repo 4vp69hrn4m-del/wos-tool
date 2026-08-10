@@ -30,7 +30,7 @@ export default function RootLayout({
           <Link href="/" style={{ fontSize: "0.9rem", fontWeight: 600 }}>
             🏠 ホームに戻る
           </Link>
-          <span style={{ fontSize: "0.75rem", color: "#64748b" }}>create by ななぽこ</span>
+          <span style={{ fontSize: "0.75rem", color: "#38bdf8" }}>create by ななぽこ</span>
         </div>
         <main>{children}</main>
       </body>
