@@ -39,6 +39,7 @@ export async function POST(
       durationTurns: toInt(body.durationTurns),
       targetTroopType: body.targetTroopType || null,
       rawText: body.rawText || null,
+      killPerActivation: toInt(body.killPerActivation),
     },
   });
 
