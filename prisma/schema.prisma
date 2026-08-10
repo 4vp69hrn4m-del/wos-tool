@@ -122,6 +122,22 @@ model Formation {
   diamondBuffActive Boolean @default(false)
   petBuffActive     Boolean @default(false)
 
+  // 兵種の合計強化%(戦闘レポートの「追加ステータス」画面の実測値)。
+  // 装備・研究・英雄レベル等をすべて含んだ、T11/T12兵種の基礎値に対する上昇率。
+  // ダメージ計算は「兵種の基礎値×(1+この%/100)」で行う。
+  buffShieldAtkPct       Float?
+  buffShieldDefPct       Float?
+  buffShieldLethalityPct Float?
+  buffShieldHpPct        Float?
+  buffSpearAtkPct        Float?
+  buffSpearDefPct        Float?
+  buffSpearLethalityPct  Float?
+  buffSpearHpPct         Float?
+  buffBowAtkPct          Float?
+  buffBowDefPct          Float?
+  buffBowLethalityPct    Float?
+  buffBowHpPct           Float?
+
   // 装備などは後で構造化する。まずはJSON文字列で自由記述。
   equipmentNote String?
 
