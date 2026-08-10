@@ -20,6 +20,18 @@ type Formation = {
   troopCount: number | null;
   diamondBuffActive: boolean;
   petBuffActive: boolean;
+  buffShieldAtkPct: number | null;
+  buffShieldDefPct: number | null;
+  buffShieldLethalityPct: number | null;
+  buffShieldHpPct: number | null;
+  buffSpearAtkPct: number | null;
+  buffSpearDefPct: number | null;
+  buffSpearLethalityPct: number | null;
+  buffSpearHpPct: number | null;
+  buffBowAtkPct: number | null;
+  buffBowDefPct: number | null;
+  buffBowLethalityPct: number | null;
+  buffBowHpPct: number | null;
   equipmentNote: string | null;
   createdAt: string;
 };
@@ -108,6 +120,7 @@ export default function FormationsPage() {
   const [form, setForm] = useState(emptyForm);
   const [equipStats, setEquipStats] = useState<Record<string, string>>({});
   const [gemStats, setGemStats] = useState<Record<string, string>>({});
+  const [buffStats, setBuffStats] = useState<Record<string, string>>({});
   const [diamondBuffActive, setDiamondBuffActive] = useState(false);
   const [petBuffActive, setPetBuffActive] = useState(false);
   const [list, setList] = useState<Formation[]>([]);
@@ -157,6 +170,11 @@ export default function FormationsPage() {
           const capKey = statKey.charAt(0).toUpperCase() + statKey.slice(1);
           body[`gem${troopCapKey}${capKey}Pct`] = gemStats[k] || "";
         }
+        for (const [statKey] of statCols) {
+          const k = `${troopKey}_${statKey}`;
+          const capKey = statKey.charAt(0).toUpperCase() + statKey.slice(1);
+          body[`buff${troopCapKey}${capKey}Pct`] = buffStats[k] || "";
+        }
       }
 
       await fetch("/api/formations", {
@@ -167,6 +185,7 @@ export default function FormationsPage() {
       setForm(emptyForm);
       setEquipStats({});
       setGemStats({});
+      setBuffStats({});
       setDiamondBuffActive(false);
       setPetBuffActive(false);
       await loadAll();
@@ -314,6 +333,15 @@ export default function FormationsPage() {
           cols={gemCols}
           values={gemStats}
           onChange={(k, v) => setGemStats((prev) => ({ ...prev, [k]: v }))}
+        />
+
+        <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+          兵種の合計強化%(戦闘レポートの「追加ステータス」画面の実測値・任意)
+        </p>
+        <StatGrid
+          cols={statCols}
+          values={buffStats}
+          onChange={(k, v) => setBuffStats((prev) => ({ ...prev, [k]: v }))}
         />
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
