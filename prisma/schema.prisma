@@ -57,6 +57,9 @@ model HeroSkill {
   targetTroopType String? // このスキルが狙う兵種("歩兵"/"騎兵"/"弓兵"。nullなら対象兵種を問わない)
   rawText String? // 会心確率・シールド・連鎖効果など、計算にまだ組み込めない効果の正確な文章をここに保存しておく
 
+  // 直接キル系スキル用(戦闘レポートの実測値をもとに、1回発動あたりの平均キル数を暫定値として登録する)
+  killPerActivation Int? // 1回発動あたりの平均直接キル数(実測値ベースの参考値)
+
   createdAt DateTime @default(now())
 }
 
