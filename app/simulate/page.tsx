@@ -127,10 +127,17 @@ function equipGemAdditivePct(hero: Hero, formation: Formation | null, stat: Stat
 }
 
 // 英雄スキル(自分upのみ)の%の合計(加算バフ扱い)
-function heroSkillAdditivePct(hero: Hero, stat: StatKey): number {
-  return hero.skills
-    .filter((s) => s.target === "self" && s.stat === stat)
-    .reduce((sum, s) => sum + effectiveValue(s), 0);
+// 兵種の兵士数が0でもスキルは発動し、自軍全体(盾・槍・弓すべて)に効果が及ぶため、
+// 編成内の英雄全員分のスキルを合計する(単体の英雄だけでなく)
+function heroSkillAdditivePct(heroes: Hero[], stat: StatKey): number {
+  return heroes.reduce(
+    (sum, hero) =>
+      sum +
+      hero.skills
+        .filter((s) => s.target === "self" && s.stat === stat)
+        .reduce((s2, s) => s2 + effectiveValue(s), 0),
+    0
+  );
 }
 
 // 専用装備・ダイヤバフ・ペットバフの合計(乗算バフ扱い)
@@ -172,10 +179,11 @@ function finalStats(
   const result: Stats = { atk: 0, def: 0, hp: 0, lethality: 0 };
   (Object.keys(result) as StatKey[]).forEach((stat) => {
     const debuffPct = enemyDebuffPct(opponentHeroes, opponentFormation, stat);
+    const skillPct = heroSkillAdditivePct(heroes, stat);
     let total = 0;
     for (const h of heroes) {
       const base = h[stat] ?? 0;
-      const additivePct = equipGemAdditivePct(h, formation, stat) + heroSkillAdditivePct(h, stat);
+      const additivePct = equipGemAdditivePct(h, formation, stat) + skillPct;
       const multPct = multiplicativePct(h, formation, stat);
       total +=
         (base * (1 + additivePct / 100) * (1 + multPct / 100)) / (1 + debuffPct / 100);
@@ -186,15 +194,18 @@ function finalStats(
 }
 
 // 1人分の最終ステータス(部隊シミュレーション用。上のfinalStatsは英雄3人分の合計値)
+// allHeroes: 編成に登録された英雄全員(スキル効果は兵士数0の英雄でも自軍全体に効くため必要)
 function heroFinalStat(
   hero: Hero,
+  allHeroes: Hero[],
   formation: Formation | null,
   opponentHeroes: Hero[],
   opponentFormation: Formation | null,
   stat: StatKey
 ): number {
   const base = hero[stat] ?? 0;
-  const additivePct = equipGemAdditivePct(hero, formation, stat) + heroSkillAdditivePct(hero, stat);
+  const additivePct =
+    equipGemAdditivePct(hero, formation, stat) + heroSkillAdditivePct(allHeroes, stat);
   const multPct = multiplicativePct(hero, formation, stat);
   const debuffPct = enemyDebuffPct(opponentHeroes, opponentFormation, stat);
   return (base * (1 + additivePct / 100) * (1 + multPct / 100)) / (1 + debuffPct / 100);
@@ -238,11 +249,12 @@ function buildTroopGroups(
     if (!hero) continue;
     const count = Math.round((formation.troopCount * pct) / 100);
     if (count <= 0) continue;
-    const atkPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "atk");
-    const defPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "def");
-    const hpPerSoldier = heroFinalStat(hero, formation, opponentHeroes, opponentFormation, "hp");
+    const atkPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "atk");
+    const defPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "def");
+    const hpPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "hp");
     const lethalityPerSoldier = heroFinalStat(
       hero,
+      heroes,
       formation,
       opponentHeroes,
       opponentFormation,
