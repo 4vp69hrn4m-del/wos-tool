@@ -884,7 +884,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                               : "なし"}
                           </div>
                         </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                           <button
                             onClick={() =>
                               moveAlliance(
@@ -893,25 +893,31 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                                 allianceKey === "vbv" ? "cbs" : "vbv"
                               )
                             }
+                            title={allianceKey === "vbv" ? "cbsへ移動" : "vbvへ移動"}
                             style={{
-                              padding: "4px 10px",
-                              fontSize: "0.75rem",
-                              background: "#1e3a5f",
-                              color: "#bae6fd",
+                              padding: "2px 6px",
+                              fontSize: "0.7rem",
+                              lineHeight: 1.4,
+                              background: "transparent",
+                              border: "1px solid #1e3a5f",
+                              color: "#7dd3fc",
                             }}
                           >
-                            {allianceKey === "vbv" ? "cbsへ移動" : "vbvへ移動"}
+                            → {allianceKey === "vbv" ? "cbs" : "vbv"}
                           </button>
                           <button
                             onClick={() => deleteParticipant(p.id, p.playerName)}
+                            title="削除"
                             style={{
-                              padding: "4px 10px",
-                              fontSize: "0.8rem",
-                              background: "#7f1d1d",
-                              color: "#fecaca",
+                              padding: "2px 6px",
+                              fontSize: "0.7rem",
+                              lineHeight: 1.4,
+                              background: "transparent",
+                              border: "1px solid #7f1d1d",
+                              color: "#f87171",
                             }}
                           >
-                            削除
+                            ✕
                           </button>
                         </div>
                       </div>
@@ -1007,39 +1013,48 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             : "なし"}
                         </div>
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                         <button
                           onClick={() => moveAlliance(p.id, p.playerName, "vbv")}
+                          title="vbvへ移動"
                           style={{
-                            padding: "4px 10px",
-                            fontSize: "0.75rem",
-                            background: "#1e3a5f",
-                            color: "#bae6fd",
+                            padding: "2px 6px",
+                            fontSize: "0.7rem",
+                            lineHeight: 1.4,
+                            background: "transparent",
+                            border: "1px solid #1e3a5f",
+                            color: "#7dd3fc",
                           }}
                         >
-                          vbvへ移動
+                          → vbv
                         </button>
                         <button
                           onClick={() => moveAlliance(p.id, p.playerName, "cbs")}
+                          title="cbsへ移動"
                           style={{
-                            padding: "4px 10px",
-                            fontSize: "0.75rem",
-                            background: "#1e3a5f",
-                            color: "#bae6fd",
+                            padding: "2px 6px",
+                            fontSize: "0.7rem",
+                            lineHeight: 1.4,
+                            background: "transparent",
+                            border: "1px solid #1e3a5f",
+                            color: "#7dd3fc",
                           }}
                         >
-                          cbsへ移動
+                          → cbs
                         </button>
                         <button
                           onClick={() => deleteParticipant(p.id, p.playerName)}
+                          title="削除"
                           style={{
-                            padding: "4px 10px",
-                            fontSize: "0.8rem",
-                            background: "#7f1d1d",
-                            color: "#fecaca",
+                            padding: "2px 6px",
+                            fontSize: "0.7rem",
+                            lineHeight: 1.4,
+                            background: "transparent",
+                            border: "1px solid #7f1d1d",
+                            color: "#f87171",
                           }}
                         >
-                          削除
+                          ✕
                         </button>
                       </div>
                     </div>
@@ -1072,4 +1087,3 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     </div>
   );
 }
-
