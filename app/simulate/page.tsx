@@ -11,6 +11,7 @@ type HeroSkill = {
   stat: string | null;
   value: number | null;
   durationTurns: number | null;
+  killPerActivation: number | null;
 };
 
 type Hero = {
@@ -297,8 +298,37 @@ function applyDamage(target: TroopGroup, damage: number) {
   target.count = target.hpPerSoldier > 0 ? Math.floor(target.hpPool / target.hpPerSoldier) : 0;
 }
 
+// 兵士数を直接削る(HPプールではなく人数そのものを減らす)。英雄スキルの直接キル用。
+function applyDirectKill(target: TroopGroup, killCount: number) {
+  target.count = Math.max(0, target.count - killCount);
+  target.hpPool = target.count * target.hpPerSoldier;
+}
+
 function isWiped(groups: TroopGroup[]): boolean {
   return groups.every((g) => g.count <= 0);
+}
+
+// 発動条件に応じて、このターンにスキルが発動するかどうかを判定する
+function skillFiresThisTurn(s: HeroSkill, turn: number): boolean {
+  if (s.triggerType === "always") return true;
+  if (s.triggerType === "chance") return Math.random() * 100 < (s.triggerValue ?? 100);
+  if (s.triggerType === "everyNTurns") return turn % Math.max(1, s.triggerValue ?? 1) === 0;
+  // "everyNAttacks"はターン制シミュレーターでは"everyNTurns"と同様に扱う暫定実装
+  if (s.triggerType === "everyNAttacks") return turn % Math.max(1, s.triggerValue ?? 1) === 0;
+  // "rallyOnly" / "defenseOnly" は集結・駐屯戦専用の仕様のため、単騎シミュレーションでは発動しない
+  return false;
+}
+
+// このターンに発動する直接キルスキルの合計キル数を計算する
+function directKillsThisTurn(heroes: Hero[], turn: number): number {
+  let total = 0;
+  for (const hero of heroes) {
+    for (const skill of hero.skills) {
+      if (!skill.killPerActivation) continue;
+      if (skillFiresThisTurn(skill, turn)) total += skill.killPerActivation;
+    }
+  }
+  return total;
 }
 
 type BattleResult = {
@@ -308,7 +338,12 @@ type BattleResult = {
   opponentGroups: TroopGroup[];
 };
 
-function simulateBattle(selfGroups: TroopGroup[], opponentGroups: TroopGroup[]): BattleResult {
+function simulateBattle(
+  selfGroups: TroopGroup[],
+  opponentGroups: TroopGroup[],
+  selfHeroes: Hero[],
+  opponentHeroes: Hero[]
+): BattleResult {
   const self = selfGroups.map((g) => ({ ...g }));
   const opponent = opponentGroups.map((g) => ({ ...g }));
   const maxTurns = 500;
@@ -317,6 +352,22 @@ function simulateBattle(selfGroups: TroopGroup[], opponentGroups: TroopGroup[]):
   while (turn < maxTurns) {
     if (isWiped(self) || isWiped(opponent)) break;
     turn++;
+
+    // 英雄スキルによる直接キル(兵種の攻防より先に処理する)
+    const selfKills = directKillsThisTurn(selfHeroes, turn);
+    if (selfKills > 0) {
+      const target = pickTarget(opponent);
+      if (target) applyDirectKill(target, selfKills);
+    }
+    if (isWiped(opponent)) break;
+
+    const opponentKills = directKillsThisTurn(opponentHeroes, turn);
+    if (opponentKills > 0) {
+      const target = pickTarget(self);
+      if (target) applyDirectKill(target, opponentKills);
+    }
+    if (isWiped(self)) break;
+
     for (const t of troopOrder) {
       const attacker = self.find((g) => g.type === t);
       if (attacker && attacker.count > 0) {
@@ -397,7 +448,7 @@ export default function SimulatePage() {
       selfHeroes,
       selfFormation
     );
-    setBattleResult(simulateBattle(selfGroups, opponentGroups));
+    setBattleResult(simulateBattle(selfGroups, opponentGroups, selfHeroes, opponentHeroes));
   }
 
   return (
