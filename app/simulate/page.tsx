@@ -53,6 +53,18 @@ type Formation = {
   gemBowHpPct: number | null;
   diamondBuffActive: boolean;
   petBuffActive: boolean;
+  buffShieldAtkPct: number | null;
+  buffShieldDefPct: number | null;
+  buffShieldLethalityPct: number | null;
+  buffShieldHpPct: number | null;
+  buffSpearAtkPct: number | null;
+  buffSpearDefPct: number | null;
+  buffSpearLethalityPct: number | null;
+  buffSpearHpPct: number | null;
+  buffBowAtkPct: number | null;
+  buffBowDefPct: number | null;
+  buffBowLethalityPct: number | null;
+  buffBowHpPct: number | null;
 };
 
 type Stats = { atk: number; def: number; hp: number; lethality: number };
@@ -213,6 +225,26 @@ function heroFinalStat(
 }
 
 type TroopType = "shield" | "spear" | "bow";
+// T12(煌耀)兵種の基礎ステータス(実測値)。T11以下は誰も使っていない前提のため、T12基礎値のみを採用する。
+const TROOP_BASE_STATS: Record<TroopType, Stats> = {
+  shield: { atk: 22, def: 31, hp: 30, lethality: 21 },
+  spear: { atk: 31, def: 24, hp: 23, lethality: 29 },
+  bow: { atk: 33, def: 24, hp: 23, lethality: 30 },
+};
+
+function troopBuffField(type: TroopType, stat: StatKey): keyof Formation {
+  const troopCap = type === "shield" ? "Shield" : type === "spear" ? "Spear" : "Bow";
+  const statCap = stat === "atk" ? "Atk" : stat === "def" ? "Def" : stat === "hp" ? "Hp" : "Lethality";
+  return `buff${troopCap}${statCap}Pct` as keyof Formation;
+}
+
+// 兵種1人あたりの最終ステータス = 兵種の基礎値 × (1 + 戦闘レポート「追加ステータス」%/100)
+function troopFinalStat(type: TroopType, stat: StatKey, formation: Formation): number {
+  const base = TROOP_BASE_STATS[type][stat];
+  const buffPct = (formation[troopBuffField(type, stat)] as number | null) ?? 0;
+  return base * (1 + buffPct / 100);
+}
+
 type TroopGroup = {
   type: TroopType;
   label: string;
@@ -250,17 +282,11 @@ function buildTroopGroups(
     if (!hero) continue;
     const count = Math.round((formation.troopCount * pct) / 100);
     if (count <= 0) continue;
-    const atkPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "atk");
-    const defPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "def");
-    const hpPerSoldier = heroFinalStat(hero, heroes, formation, opponentHeroes, opponentFormation, "hp");
-    const lethalityPerSoldier = heroFinalStat(
-      hero,
-      heroes,
-      formation,
-      opponentHeroes,
-      opponentFormation,
-      "lethality"
-    );
+    // 兵士自体のダメージ計算は「兵種の基礎値×追加ステータス%」を使う(英雄自身のステータスではない)
+    const atkPerSoldier = troopFinalStat(type, "atk", formation);
+    const defPerSoldier = troopFinalStat(type, "def", formation);
+    const hpPerSoldier = troopFinalStat(type, "hp", formation);
+    const lethalityPerSoldier = troopFinalStat(type, "lethality", formation);
     groups.push({
       type,
       label: troopTypeLabel[type],
