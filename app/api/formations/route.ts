@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
     const n = Number(v);
     return Number.isNaN(n) ? null : n;
   };
+  const toFloat = (v: unknown) => {
+    if (v === "" || v === null || v === undefined) return null;
+    const n = Number(v);
+    return Number.isNaN(n) ? null : n;
+  };
 
   const formation = await prisma.formation.create({
     data: {
@@ -45,6 +50,18 @@ export async function POST(req: NextRequest) {
       gemBowHpPct: toInt(body.gemBowHpPct),
       diamondBuffActive: !!body.diamondBuffActive,
       petBuffActive: !!body.petBuffActive,
+      buffShieldAtkPct: toFloat(body.buffShieldAtkPct),
+      buffShieldDefPct: toFloat(body.buffShieldDefPct),
+      buffShieldLethalityPct: toFloat(body.buffShieldLethalityPct),
+      buffShieldHpPct: toFloat(body.buffShieldHpPct),
+      buffSpearAtkPct: toFloat(body.buffSpearAtkPct),
+      buffSpearDefPct: toFloat(body.buffSpearDefPct),
+      buffSpearLethalityPct: toFloat(body.buffSpearLethalityPct),
+      buffSpearHpPct: toFloat(body.buffSpearHpPct),
+      buffBowAtkPct: toFloat(body.buffBowAtkPct),
+      buffBowDefPct: toFloat(body.buffBowDefPct),
+      buffBowLethalityPct: toFloat(body.buffBowLethalityPct),
+      buffBowHpPct: toFloat(body.buffBowHpPct),
       equipmentNote: body.equipmentNote || null,
     },
   });
