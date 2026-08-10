@@ -17,6 +17,7 @@ type HeroSkill = {
   durationTurns: number | null;
   targetTroopType: string | null; // 対象の兵種("歩兵"/"騎兵"/"弓兵"/null)
   rawText: string | null; // 計算にまだ組み込めない効果の正確な文章
+  killPerActivation: number | null; // 1回発動あたりの平均直接キル数(実測値ベースの参考値)
 };
 
 type Hero = {
@@ -58,11 +59,13 @@ function describeSkill(s: HeroSkill): string {
   else if (s.triggerType === "rallyOnly") trigger = "集結時のみ";
   else if (s.triggerType === "defenseOnly") trigger = "防衛時のみ";
 
+  const killPart = s.killPerActivation ? ` (1発動あたり約${s.killPerActivation.toLocaleString()}キル)` : "";
+
   // 計算に使える対象/ステータス/数値が無い場合は、自由記述の本文をそのまま表示する
   if (!s.target || !s.stat || s.value === null) {
     return `[スキル${s.skillSlot}] ${s.name}: ${required}[${trigger}] ${
       s.rawText ? s.rawText : "(計算未対応の効果)"
-    }`;
+    }${killPart}`;
   }
 
   const targetLabel = s.target === "self" ? "自分" : "敵";
@@ -71,7 +74,7 @@ function describeSkill(s: HeroSkill): string {
   const targetTroop = s.targetTroopType ? `対象:${s.targetTroopType}` : "";
   return `[スキル${s.skillSlot}] ${s.name}: ${required}[${trigger}] ${targetLabel}の${
     statLabel[s.stat] || s.stat
-  }${sign}${s.value}%${duration}${targetTroop ? ` (${targetTroop})` : ""}`;
+  }${sign}${s.value}%${duration}${targetTroop ? ` (${targetTroop})` : ""}${killPart}`;
 }
 
 export default function MasterPage() {
@@ -104,6 +107,7 @@ export default function MasterPage() {
   const [skillTargetTroopType, setSkillTargetTroopType] = useState("");
   const [skillRawText, setSkillRawText] = useState("");
   const [skillIsRawOnly, setSkillIsRawOnly] = useState(false);
+  const [skillKillPerActivation, setSkillKillPerActivation] = useState("");
 
   const [generationFilter, setGenerationFilter] = useState("");
   const [troopFilter, setTroopFilter] = useState("");
@@ -157,6 +161,7 @@ export default function MasterPage() {
     setSkillTargetTroopType("");
     setSkillRawText("");
     setSkillIsRawOnly(false);
+    setSkillKillPerActivation("");
   }
 
   function startEditHero(h: Hero) {
@@ -229,6 +234,7 @@ export default function MasterPage() {
         durationTurns: skillDuration,
         targetTroopType: skillTargetTroopType,
         rawText: skillRawText,
+        killPerActivation: skillKillPerActivation,
       }),
     });
     if (!res) return;
@@ -583,6 +589,13 @@ export default function MasterPage() {
               value={skillDuration}
               onChange={(e) => setSkillDuration(e.target.value)}
               placeholder="例: 2"
+            />
+
+            <label>1回発動あたりの直接キル数(任意・戦闘レポートの実測値ベース)</label>
+            <input
+              value={skillKillPerActivation}
+              onChange={(e) => setSkillKillPerActivation(e.target.value)}
+              placeholder="例: 50000"
             />
 
             <button onClick={addSkill}>このスキルを追加</button>
