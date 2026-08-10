@@ -322,7 +322,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         {hasT12 && (
           <div className="row">
             <div>
-              <label>盾兵スキルLv / Shield skill Lv</label>
+              <label style={{ display: "block", minHeight: "2.6em" }}>
+                盾兵スキルLv / Shield skill Lv
+              </label>
               <select
                 value={t12ShieldSkill}
                 onChange={(e) => setT12ShieldSkill(e.target.value)}
@@ -335,7 +337,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label>槍兵スキルLv / Spear skill Lv</label>
+              <label style={{ display: "block", minHeight: "2.6em" }}>
+                槍兵スキルLv / Spear skill Lv
+              </label>
               <select value={t12SpearSkill} onChange={(e) => setT12SpearSkill(e.target.value)}>
                 <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
@@ -345,7 +349,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label>弓兵スキルLv / Bow skill Lv</label>
+              <label style={{ display: "block", minHeight: "2.6em" }}>
+                弓兵スキルLv / Bow skill Lv
+              </label>
               <select value={t12BowSkill} onChange={(e) => setT12BowSkill(e.target.value)}>
                 <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
