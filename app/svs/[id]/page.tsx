@@ -160,6 +160,16 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
     await load();
   }
 
+  async function moveAlliance(id: number, toAlliance: "vbv" | "cbs") {
+    const res = await adminFetch(`/api/svs-participants/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alliance: toAlliance }),
+    });
+    if (!res) return;
+    await load();
+  }
+
   function updateDraft(slotId: number, patch: Partial<LeaderDraft>) {
     setLeaderDrafts((prev) => ({
       ...prev,
@@ -886,18 +896,32 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                               : "なし"}
                           </div>
                         </div>
-                        <button
-                          onClick={() => deleteParticipant(p.id, p.playerName)}
-                          style={{
-                            padding: "4px 10px",
-                            fontSize: "0.8rem",
-                            background: "#7f1d1d",
-                            color: "#fecaca",
-                            flexShrink: 0,
-                          }}
-                        >
-                          削除
-                        </button>
+                        <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                          <button
+                            onClick={() => moveAlliance(p.id, allianceKey === "vbv" ? "cbs" : "vbv")}
+                            style={{
+                              padding: "4px 10px",
+                              fontSize: "0.8rem",
+                              background: "transparent",
+                              color: "#94a3b8",
+                              border: "1px solid #334155",
+                            }}
+                          >
+                            → {allianceKey === "vbv" ? "cbs" : "vbv"}
+                          </button>
+                          <button
+                            onClick={() => deleteParticipant(p.id, p.playerName)}
+                            style={{
+                              padding: "4px 10px",
+                              fontSize: "0.8rem",
+                              background: "#7f1d1d",
+                              color: "#fecaca",
+                              flexShrink: 0,
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </span>
                       </div>
                     ))}
                   </div>
