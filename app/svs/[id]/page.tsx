@@ -317,7 +317,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               onChange={(e) => setNoSleepRisk(e.target.checked)}
               style={{ width: "auto" }}
             />
-            寝落ちは考慮しないものとする / I will not fall asleep
+            寝落ちはしません / I will not fall asleep
           </label>
         </div>
 
