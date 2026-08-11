@@ -40,6 +40,18 @@ type SvsRound = {
 
 const presetLabels = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
 
+// ラベル(JST想定)からUTC表記を作る。例: "21:00〜23:00" → "UTC 12:00〜14:00"
+function toUtcLabel(label: string): string {
+  const parts = label.split("〜");
+  if (parts.length !== 2) return "";
+  const toUtc = (hm: string) => {
+    const [h, m] = hm.split(":").map(Number);
+    const utcH = (h - 9 + 24) % 24;
+    return `${String(utcH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+  return `UTC ${toUtc(parts[0])}〜${toUtc(parts[1])}`;
+}
+
 function totalSkill(p: Participant) {
   return (p.t12ShieldSkill ?? 0) + (p.t12SpearSkill ?? 0) + (p.t12BowSkill ?? 0);
 }
@@ -144,17 +156,6 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
   async function deleteParticipant(id: number, name: string) {
     if (!confirm(`「${name}」の登録を削除しますか?`)) return;
     const res = await adminFetch(`/api/svs-participants/${id}`, { method: "DELETE" });
-    if (!res) return;
-    await load();
-  }
-
-  async function moveAlliance(id: number, name: string, alliance: "vbv" | "cbs") {
-    if (!confirm(`「${name}」を${alliance}に移動しますか?`)) return;
-    const res = await adminFetch(`/api/svs-participants/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ alliance }),
-    });
     if (!res) return;
     await load();
   }
@@ -295,6 +296,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               style={{ width: "auto" }}
             />
             {t.label}
+            <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>({toUtcLabel(t.label)})</span>
           </label>
         ))}
 
@@ -322,9 +324,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         {hasT12 && (
           <div className="row">
             <div>
-              <label style={{ display: "block", minHeight: "2.6em" }}>
-                盾兵スキルLv / Shield skill Lv
-              </label>
+              <label>盾兵スキルLv / Shield skill Lv</label>
               <select
                 value={t12ShieldSkill}
                 onChange={(e) => setT12ShieldSkill(e.target.value)}
@@ -337,9 +337,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label style={{ display: "block", minHeight: "2.6em" }}>
-                槍兵スキルLv / Spear skill Lv
-              </label>
+              <label>槍兵スキルLv / Spear skill Lv</label>
               <select value={t12SpearSkill} onChange={(e) => setT12SpearSkill(e.target.value)}>
                 <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
@@ -349,9 +347,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
               </select>
             </div>
             <div>
-              <label style={{ display: "block", minHeight: "2.6em" }}>
-                弓兵スキルLv / Bow skill Lv
-              </label>
+              <label>弓兵スキルLv / Bow skill Lv</label>
               <select value={t12BowSkill} onChange={(e) => setT12BowSkill(e.target.value)}>
                 <option value="">(未選択 / none)</option>
                 <option value="0">0</option>
@@ -890,42 +886,18 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                               : "なし"}
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                          <button
-                            onClick={() =>
-                              moveAlliance(
-                                p.id,
-                                p.playerName,
-                                allianceKey === "vbv" ? "cbs" : "vbv"
-                              )
-                            }
-                            title={allianceKey === "vbv" ? "cbsへ移動" : "vbvへ移動"}
-                            style={{
-                              padding: "2px 6px",
-                              fontSize: "0.7rem",
-                              lineHeight: 1.4,
-                              background: "transparent",
-                              border: "1px solid #1e3a5f",
-                              color: "#7dd3fc",
-                            }}
-                          >
-                            → {allianceKey === "vbv" ? "cbs" : "vbv"}
-                          </button>
-                          <button
-                            onClick={() => deleteParticipant(p.id, p.playerName)}
-                            title="削除"
-                            style={{
-                              padding: "2px 6px",
-                              fontSize: "0.7rem",
-                              lineHeight: 1.4,
-                              background: "transparent",
-                              border: "1px solid #7f1d1d",
-                              color: "#f87171",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => deleteParticipant(p.id, p.playerName)}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "0.8rem",
+                            background: "#7f1d1d",
+                            color: "#fecaca",
+                            flexShrink: 0,
+                          }}
+                        >
+                          削除
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1019,50 +991,18 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             : "なし"}
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                        <button
-                          onClick={() => moveAlliance(p.id, p.playerName, "vbv")}
-                          title="vbvへ移動"
-                          style={{
-                            padding: "2px 6px",
-                            fontSize: "0.7rem",
-                            lineHeight: 1.4,
-                            background: "transparent",
-                            border: "1px solid #1e3a5f",
-                            color: "#7dd3fc",
-                          }}
-                        >
-                          → vbv
-                        </button>
-                        <button
-                          onClick={() => moveAlliance(p.id, p.playerName, "cbs")}
-                          title="cbsへ移動"
-                          style={{
-                            padding: "2px 6px",
-                            fontSize: "0.7rem",
-                            lineHeight: 1.4,
-                            background: "transparent",
-                            border: "1px solid #1e3a5f",
-                            color: "#7dd3fc",
-                          }}
-                        >
-                          → cbs
-                        </button>
-                        <button
-                          onClick={() => deleteParticipant(p.id, p.playerName)}
-                          title="削除"
-                          style={{
-                            padding: "2px 6px",
-                            fontSize: "0.7rem",
-                            lineHeight: 1.4,
-                            background: "transparent",
-                            border: "1px solid #7f1d1d",
-                            color: "#f87171",
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => deleteParticipant(p.id, p.playerName)}
+                        style={{
+                          padding: "4px 10px",
+                          fontSize: "0.8rem",
+                          background: "#7f1d1d",
+                          color: "#fecaca",
+                          flexShrink: 0,
+                        }}
+                      >
+                        削除
+                      </button>
                     </div>
                   ))}
               </div>
