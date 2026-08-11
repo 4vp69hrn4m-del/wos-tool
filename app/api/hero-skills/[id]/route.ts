@@ -29,6 +29,8 @@ export async function PATCH(
   if (body.value !== undefined) data.value = toInt(body.value) || 0;
   if (body.durationTurns !== undefined) data.durationTurns = toInt(body.durationTurns);
   if (body.targetTroopType !== undefined) data.targetTroopType = body.targetTroopType || null;
+  if (body.rawText !== undefined) data.rawText = body.rawText || null;
+  if (body.killPerActivation !== undefined) data.killPerActivation = toInt(body.killPerActivation);
 
   const skill = await prisma.heroSkill.update({
     where: { id },
