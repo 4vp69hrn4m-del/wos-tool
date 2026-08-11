@@ -39,6 +39,18 @@ type SvsRound = {
 const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
 const ALLIANCE_COLOR = "#4ade80"; // vbv/cbs見出し共通の緑色
 
+// ラベル(JST想定)からUTC表記を作る。例: "21:00〜23:00" → "UTC 12:00〜14:00"
+function toUtcLabel(label: string): string {
+  const parts = label.split("〜");
+  if (parts.length !== 2) return "";
+  const toUtc = (hm: string) => {
+    const [h, m] = hm.split(":").map(Number);
+    const utcH = (h - 9 + 24) % 24;
+    return `${String(utcH).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+  return `UTC ${toUtc(parts[0])}〜${toUtc(parts[1])}`;
+}
+
 function sortBySkill(members: Participant[]) {
   return [...members].sort(
     (a, b) =>
@@ -245,6 +257,9 @@ export default function Home() {
                   <strong>
                     {t.label}({totalAvailable}人)
                   </strong>
+                  <span style={{ color: "#94a3b8", fontSize: "0.8rem", marginLeft: 6 }}>
+                    ({toUtcLabel(t.label)})
+                  </span>
                   {inSlot.length === 0 && (
                     <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
                       まだ駐屯メンバーが選ばれていません。
