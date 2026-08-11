@@ -75,4 +75,5 @@ a {
 }
 .row > div {
   flex: 1;
+  min-width: 0;
 }
