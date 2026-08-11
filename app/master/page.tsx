@@ -105,6 +105,7 @@ export default function MasterPage() {
   const [skillValue, setSkillValue] = useState("");
   const [skillDuration, setSkillDuration] = useState("");
   const [skillTargetTroopType, setSkillTargetTroopType] = useState("");
+  const [editingSkillId, setEditingSkillId] = useState<number | null>(null);
   const [skillRawText, setSkillRawText] = useState("");
   const [skillIsRawOnly, setSkillIsRawOnly] = useState(false);
   const [skillKillPerActivation, setSkillKillPerActivation] = useState("");
@@ -162,6 +163,25 @@ export default function MasterPage() {
     setSkillRawText("");
     setSkillIsRawOnly(false);
     setSkillKillPerActivation("");
+    setEditingSkillId(null);
+  }
+
+  function startEditSkill(s: HeroSkill) {
+    setEditingSkillId(s.id);
+    setSkillName(s.name);
+    setSkillSlot(String(s.skillSlot));
+    setSkillTriggerType(s.triggerType);
+    setSkillTriggerValue(s.triggerValue !== null ? String(s.triggerValue) : "");
+    setSkillRequiredTroopType(s.requiredTroopType || "");
+    setSkillTarget(s.target || "self");
+    setSkillStat(s.stat || "atk");
+    setSkillValue(s.value !== null ? String(s.value) : "");
+    setSkillDuration(s.durationTurns !== null ? String(s.durationTurns) : "");
+    setSkillTargetTroopType(s.targetTroopType || "");
+    setSkillRawText(s.rawText || "");
+    setSkillIsRawOnly(!s.target || !s.stat || s.value === null);
+    setSkillKillPerActivation(s.killPerActivation !== null ? String(s.killPerActivation) : "");
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
 
   function startEditHero(h: Hero) {
@@ -219,24 +239,31 @@ export default function MasterPage() {
 
   async function addSkill() {
     if (!editingId || !skillName.trim()) return;
-    const res = await adminFetch(`/api/heroes/${editingId}/skills`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: skillName,
-        skillSlot: skillSlot,
-        triggerType: skillTriggerType,
-        triggerValue: skillTriggerValue,
-        requiredTroopType: skillRequiredTroopType,
-        target: skillIsRawOnly ? "" : skillTarget,
-        stat: skillIsRawOnly ? "" : skillStat,
-        value: skillIsRawOnly ? "" : skillValue,
-        durationTurns: skillDuration,
-        targetTroopType: skillTargetTroopType,
-        rawText: skillRawText,
-        killPerActivation: skillKillPerActivation,
-      }),
-    });
+    const body = {
+      name: skillName,
+      skillSlot: skillSlot,
+      triggerType: skillTriggerType,
+      triggerValue: skillTriggerValue,
+      requiredTroopType: skillRequiredTroopType,
+      target: skillIsRawOnly ? "" : skillTarget,
+      stat: skillIsRawOnly ? "" : skillStat,
+      value: skillIsRawOnly ? "" : skillValue,
+      durationTurns: skillDuration,
+      targetTroopType: skillTargetTroopType,
+      rawText: skillRawText,
+      killPerActivation: skillKillPerActivation,
+    };
+    const res = editingSkillId
+      ? await adminFetch(`/api/hero-skills/${editingSkillId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      : await adminFetch(`/api/heroes/${editingId}/skills`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
     if (!res) return;
     resetSkillForm();
     await loadAll();
@@ -437,23 +464,51 @@ export default function MasterPage() {
                 }}
               >
                 <span>{describeSkill(s)}</span>
-                <button
-                  onClick={() => deleteSkill(s.id, s.name)}
-                  style={{
-                    marginTop: 0,
-                    padding: "4px 10px",
-                    fontSize: "0.8rem",
-                    background: "#7f1d1d",
-                    color: "#fecaca",
-                    flexShrink: 0,
-                  }}
+                <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button
+                    onClick={() => startEditSkill(s)}
+                    style={{
+                      marginTop: 0,
+                      padding: "4px 10px",
+                      fontSize: "0.8rem",
+                      background: "#1e3a5f",
+                      color: "#bfdbfe",
+                    }}
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => deleteSkill(s.id, s.name)}
+                    style={{
+                      marginTop: 0,
+                      padding: "4px 10px",
+                      fontSize: "0.8rem",
+                      background: "#7f1d1d",
+                      color: "#fecaca",
+                      flexShrink: 0,
+                    }}
                 >
                   削除
-                </button>
+                  </button>
+                </span>
               </div>
             ))}
 
-            <h3>スキルを追加</h3>
+            <h3>{editingSkillId ? "スキルを編集" : "スキルを追加"}</h3>
+            {editingSkillId && (
+              <button
+                onClick={resetSkillForm}
+                style={{
+                  marginBottom: 8,
+                  padding: "4px 10px",
+                  fontSize: "0.8rem",
+                  background: "#334155",
+                  color: "#e2e8f0",
+                }}
+              >
+                編集をやめて新規追加に戻る
+              </button>
+            )}
             <label>スキル名</label>
             <input
               value={skillName}
@@ -598,7 +653,7 @@ export default function MasterPage() {
               placeholder="例: 50000"
             />
 
-            <button onClick={addSkill}>このスキルを追加</button>
+            <button onClick={addSkill}>{editingSkillId ? "このスキルを更新" : "このスキルを追加"}</button>
           </div>
         )}
 
