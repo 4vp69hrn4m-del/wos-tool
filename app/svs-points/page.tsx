@@ -119,7 +119,12 @@ const TRAIN_RATE_BY_TYPE_LEVEL: Record<TroopType, Record<number, TrainRate>> = {
   },
 };
 const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12、実際の表示時間ベース。弓兵の実測値、他兵種は今のところ同じ値を暫定使用)
-const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, coal: 536, iron: 168 };
+// 昇格の資源消費は弓兵しか実測値がないため、T12訓練の兵種間資源比率を使って盾兵・槍兵分を推定している
+const PROMOTE_RESOURCE_BY_TYPE: Record<TroopType, { food: number; wood: number; coal: number; iron: number }> = {
+  bow: { food: 2176, wood: 3216, coal: 536, iron: 168 }, // 実測値
+  shield: { food: 3227, wood: 2418, coal: 561, iron: 113 }, // T12訓練の盾兵/弓兵の比率から推定
+  spear: { food: 3177, wood: 2991, coal: 612, iron: 135 }, // T12訓練の槍兵/弓兵の比率から推定
+};
 
 // 「資源消費減少」研究のレベルごとの減少率(%)。T11とT12で刻み方が異なる(実測値)
 const RESOURCE_REDUCTION_BY_LEVEL: Record<11 | 12, Record<number, number>> = {
@@ -183,7 +188,7 @@ function Day4Training() {
     };
   }
 
-  const baseResource = mode === "train" ? trainRate : PROMOTE_RESOURCE_PER_TROOP;
+  const baseResource = mode === "train" ? trainRate : PROMOTE_RESOURCE_BY_TYPE[troopType];
   const resourcePerTroop = resourceFor(baseResource);
 
   const totalSpeedupSeconds =
@@ -621,7 +626,7 @@ function Day4Training() {
       )}
 
       <p style={{ color: "#64748b", fontSize: "0.8rem", marginTop: 16 }}>
-        ※ 訓練ポイントの表(T10〜T12)は兵種に関係ない共通値です。訓練の所要時間・資源消費は兵種(盾/槍/弓)・レベル(T11/T12)ごとの実測値を反映しています。昇格の所要時間・資源消費(9.4秒/人)は今のところ弓兵の実測値を全兵種共通で使っています。速度ボーナス等により実際の時間は変動する可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
+        ※ 訓練ポイントの表(T10〜T12)は兵種に関係ない共通値です。訓練の所要時間・資源消費は兵種(盾/槍/弓)・レベル(T11/T12)ごとの実測値を反映しています。昇格の所要時間(9.4秒/人)は弓兵の実測値を全兵種共通で使っています。昇格の資源消費は弓兵のみ実測値があり、盾兵・槍兵はT12訓練の兵種間資源比率から推定した値です。速度ボーナス等により実際の時間は変動する可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
       </p>
     </>
   );
