@@ -176,6 +176,9 @@ export default function Home() {
         <p>
           <Link href="/timer">→ 王城着弾時刻計算</Link>
         </p>
+        <p>
+          <Link href="/svs-points">→ SVSポイント計算(氷原の巨獣狩り/兵士訓練)</Link>
+        </p>
       </div>
 
       <div className="card">
@@ -360,9 +363,6 @@ export default function Home() {
         </p>
         <p>
           <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
-        </p>
-        <p>
-          <Link href="/svs-points">→ SVSポイント計算(氷原の巨獣狩り)</Link>
         </p>
       </div>
     </div>
