@@ -299,6 +299,7 @@ export default function SvsPointsPage() {
           onClick={() => setDay("day3")}
           style={{
             background: day === "day3" ? "#2563eb" : "transparent",
+            color: day === "day3" ? "#ffffff" : "#e2e8f0",
             border: "1px solid #334155",
           }}
         >
@@ -308,6 +309,7 @@ export default function SvsPointsPage() {
           onClick={() => setDay("day4")}
           style={{
             background: day === "day4" ? "#2563eb" : "transparent",
+            color: day === "day4" ? "#ffffff" : "#e2e8f0",
             border: "1px solid #334155",
           }}
         >
