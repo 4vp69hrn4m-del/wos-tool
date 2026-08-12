@@ -101,12 +101,12 @@ function Day3Beast() {
 // 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(研究レベル0%減=元の値、レベル別)
 // 所要時間は「初期時間」ではなく、実際に表示されていた訓練時間(個人の速度ボーナス込み)を使用
 // 資源消費は「資源消費減少」研究の効果を差し引いた元の値(研究レベル選択で減少率を掛けて表示する)
-const TRAIN_RATE_BY_LEVEL: Record<number, { secPerTroop: number; food: number; wood: number; ore: number; crystal: number }> = {
-  11: { secPerTroop: 48, food: 4358, wood: 6449, ore: 1081, crystal: 350 },
-  12: { secPerTroop: 57.76, food: 5617, wood: 8329, ore: 1356, crystal: 453 },
+const TRAIN_RATE_BY_LEVEL: Record<number, { secPerTroop: number; food: number; wood: number; coal: number; iron: number }> = {
+  11: { secPerTroop: 48, food: 4358, wood: 6449, coal: 1081, iron: 350 },
+  12: { secPerTroop: 57.76, food: 5617, wood: 8329, coal: 1356, iron: 453 },
 };
 const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12、実際の表示時間ベース)
-const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, ore: 536, crystal: 168 };
+const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, coal: 536, iron: 168 };
 
 // 「資源消費減少」研究のレベルごとの減少率(%)。T11とT12で刻み方が異なる(実測値)
 const RESOURCE_REDUCTION_BY_LEVEL: Record<11 | 12, Record<number, number>> = {
@@ -140,7 +140,8 @@ function Day4Training() {
   const resourcePerTroop = {
     food: baseResource.food * reductionRatio,
     wood: baseResource.wood * reductionRatio,
-    ore: baseResource.ore * reductionRatio,
+    coal: baseResource.coal * reductionRatio,
+    iron: baseResource.iron * reductionRatio,
   };
 
   const totalSpeedupSeconds =
@@ -162,7 +163,8 @@ function Day4Training() {
   const totalResource = {
     food: Math.round(troopCount * resourcePerTroop.food),
     wood: Math.round(troopCount * resourcePerTroop.wood),
-    ore: Math.round(troopCount * resourcePerTroop.ore),
+    coal: Math.round(troopCount * resourcePerTroop.coal),
+    iron: Math.round(troopCount * resourcePerTroop.iron),
   };
 
   return (
@@ -325,7 +327,7 @@ function Day4Training() {
           )}
           <p style={{ marginTop: 12 }}>
             必要資源: 🍖食料{totalResource.food.toLocaleString()} / 🪵木材{totalResource.wood.toLocaleString()}{" "}
-            / ⛏鉄鉱石{totalResource.ore.toLocaleString()}
+            / ⚫石炭{totalResource.coal.toLocaleString()} / ⛏鉄鉱石{totalResource.iron.toLocaleString()}
           </p>
         </div>
       )}
