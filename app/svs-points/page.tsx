@@ -98,13 +98,21 @@ function Day3Beast() {
   );
 }
 
-// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(実測値・弓兵の例、レベル別)
+// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(研究レベル0%減=元の値、レベル別)
+// 所要時間は「初期時間」ではなく、実際に表示されていた訓練時間(個人の速度ボーナス込み)を使用
+// 資源消費は「資源消費減少」研究の効果を差し引いた元の値(研究レベル選択で減少率を掛けて表示する)
 const TRAIN_RATE_BY_LEVEL: Record<number, { secPerTroop: number; food: number; wood: number; ore: number; crystal: number }> = {
-  11: { secPerTroop: 180, food: 3486, wood: 5159, ore: 865, crystal: 280 },
-  12: { secPerTroop: 215, food: 5617, wood: 8329, ore: 1356, crystal: 453 },
+  11: { secPerTroop: 48, food: 4358, wood: 6449, ore: 1081, crystal: 350 },
+  12: { secPerTroop: 57.76, food: 5617, wood: 8329, ore: 1356, crystal: 453 },
 };
-const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12)
+const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12、実際の表示時間ベース)
 const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, ore: 536, crystal: 168 };
+
+// 「資源消費減少」研究のレベルごとの減少率(%)。T11とT12で刻み方が異なる(実測値)
+const RESOURCE_REDUCTION_BY_LEVEL: Record<11 | 12, Record<number, number>> = {
+  11: { 0: 0, 1: 5, 2: 10, 3: 15, 4: 20, 5: 25, 6: 30, 7: 35, 8: 40, 9: 45, 10: 50 },
+  12: { 0: 0, 1: 2.5, 2: 5, 3: 7.5, 4: 10, 5: 12.5, 6: 15, 7: 17.5, 8: 20, 9: 22.5, 10: 25 },
+};
 
 function Day4Training() {
   const [inputMode, setInputMode] = useState<"count" | "speedup">("speedup");
@@ -117,12 +125,26 @@ function Day4Training() {
   const [speedupHours, setSpeedupHours] = useState<string>("");
   const [speedupMinutes, setSpeedupMinutes] = useState<string>("");
   const [valeriaLevel, setValeriaLevel] = useState<number>(0); // 0 = 未所持/選択なし
+  const [resourceResearchLevel, setResourceResearchLevel] = useState<number>(0);
 
   const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
 
   const trainRate = TRAIN_RATE_BY_LEVEL[trainLevel] || TRAIN_RATE_BY_LEVEL[12];
   const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
-  const resourcePerTroop = mode === "train" ? trainRate : PROMOTE_RESOURCE_PER_TROOP;
+
+  // 訓練の場合のみ「資源消費減少」研究の効果を反映する(昇格側のデータはまだ無いため未反映)
+  const reductionPct =
+    mode === "train" ? RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12]?.[resourceResearchLevel] || 0 : 0;
+  const reductionRatio = 1 - reductionPct / 100;
+  const resourcePerTroop =
+    mode === "train"
+      ? {
+          food: trainRate.food * reductionRatio,
+          wood: trainRate.wood * reductionRatio,
+          ore: trainRate.ore * reductionRatio,
+          crystal: trainRate.crystal * reductionRatio,
+        }
+      : PROMOTE_RESOURCE_PER_TROOP;
 
   const totalSpeedupSeconds =
     (Number(speedupDays) || 0) * 86400 +
@@ -184,6 +206,20 @@ function Day4Training() {
                 <option key={lv} value={lv}>
                   T{lv}(1人{TRAINING_POINTS_BY_LEVEL[lv]}ポイント
                   {TRAIN_RATE_BY_LEVEL[lv] ? `・${TRAIN_RATE_BY_LEVEL[lv].secPerTroop}秒/人` : ""})
+                </option>
+              ))}
+            </select>
+
+            <label style={{ marginTop: 16, display: "block" }}>
+              T{trainLevel}訓練の「資源消費減少」研究レベル
+            </label>
+            <select
+              value={resourceResearchLevel}
+              onChange={(e) => setResourceResearchLevel(Number(e.target.value))}
+            >
+              {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
+                <option key={lv} value={lv}>
+                  {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
                 </option>
               ))}
             </select>
@@ -298,7 +334,7 @@ function Day4Training() {
       )}
 
       <p style={{ color: "#64748b", fontSize: "0.8rem", marginTop: 16 }}>
-        ※ 訓練ポイントの表(T10〜T12)・所要時間/資源(T11訓練180秒・T12訓練215秒・昇格9.4秒、いずれも弓兵の実測値)は固定値です。兵種(盾/槍)で多少異なる可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
+        ※ 訓練ポイントの表(T10〜T12)・所要時間/資源(T11訓練48秒・T12訓練57.76秒・昇格9.4秒、いずれも弓兵の実際の表示時間ベースの実測値。速度ボーナス等により変動する可能性があります)は固定値です。兵種(盾/槍)で多少異なる可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
       </p>
     </>
   );
