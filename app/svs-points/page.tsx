@@ -195,7 +195,7 @@ function Day4Training() {
         <label style={{ marginTop: 16, display: "block" }}>種類</label>
         <select value={mode} onChange={(e) => setMode(e.target.value as "train" | "promote")}>
           <option value="train">新規訓練</option>
-          <option value="promote">昇格(T11→T12、約9.4秒/人)</option>
+          <option value="promote">昇格</option>
         </select>
 
         {mode === "train" ? (
