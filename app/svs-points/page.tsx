@@ -296,7 +296,7 @@ function Day4Training() {
         {mode === "train" && (
           <>
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-              SVS当日に追加でかかる訓練速度ボーナス(任意。基準の訓練速度+{BASE_TRAINING_SPEED_BONUS_PCT}%は既に織り込み済みです)
+              SVS当日に追加でかかる訓練速度ボーナス(任意。基準の訓練速度+{BASE_TRAINING_SPEED_BONUS_PCT}%は既に織り込み済みです。この基準値は人によって誤差があります)
             </p>
             <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input
