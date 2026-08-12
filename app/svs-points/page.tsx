@@ -98,14 +98,27 @@ function Day3Beast() {
   );
 }
 
-// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(研究レベル0%減=元の値、レベル別)
+// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(研究レベル0%減=元の値、兵種・レベル別)
 // 所要時間は「初期時間」ではなく、実際に表示されていた訓練時間(個人の速度ボーナス込み)を使用
 // 資源消費は「資源消費減少」研究の効果を差し引いた元の値(研究レベル選択で減少率を掛けて表示する)
-const TRAIN_RATE_BY_LEVEL: Record<number, { secPerTroop: number; food: number; wood: number; coal: number; iron: number }> = {
-  11: { secPerTroop: 48, food: 4358, wood: 6449, coal: 1081, iron: 350 },
-  12: { secPerTroop: 57.76, food: 5617, wood: 8329, coal: 1356, iron: 453 },
+type TroopType = "shield" | "spear" | "bow";
+const TROOP_TYPE_LABEL: Record<TroopType, string> = { shield: "盾兵", spear: "槍兵", bow: "弓兵" };
+type TrainRate = { secPerTroop: number; food: number; wood: number; coal: number; iron: number };
+const TRAIN_RATE_BY_TYPE_LEVEL: Record<TroopType, Record<number, TrainRate>> = {
+  shield: {
+    11: { secPerTroop: 48.36, food: 4841, wood: 3615, coal: 839, iron: 177 },
+    12: { secPerTroop: 57.76, food: 8329, wood: 6262, coal: 1420, iron: 304 },
+  },
+  spear: {
+    11: { secPerTroop: 48.36, food: 5165, wood: 4841, coal: 968, iron: 230 },
+    12: { secPerTroop: 57.76, food: 8200, wood: 7747, coal: 1549, iron: 365 },
+  },
+  bow: {
+    11: { secPerTroop: 48, food: 4358, wood: 6449, coal: 1081, iron: 350 },
+    12: { secPerTroop: 57.76, food: 5617, wood: 8329, coal: 1356, iron: 453 },
+  },
 };
-const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12、実際の表示時間ベース)
+const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12、実際の表示時間ベース。弓兵の実測値、他兵種は今のところ同じ値を暫定使用)
 const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, coal: 536, iron: 168 };
 
 // 「資源消費減少」研究のレベルごとの減少率(%)。T11とT12で刻み方が異なる(実測値)
@@ -117,6 +130,7 @@ const RESOURCE_REDUCTION_BY_LEVEL: Record<11 | 12, Record<number, number>> = {
 function Day4Training() {
   const [inputMode, setInputMode] = useState<"count" | "speedup">("speedup");
   const [mode, setMode] = useState<"train" | "promote">("train");
+  const [troopType, setTroopType] = useState<TroopType>("bow");
   const [trainLevel, setTrainLevel] = useState<number>(12);
   const [fromLevel, setFromLevel] = useState<number>(11);
   const [toLevel, setToLevel] = useState<number>(12);
@@ -129,7 +143,10 @@ function Day4Training() {
 
   const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
 
-  const trainRate = TRAIN_RATE_BY_LEVEL[trainLevel] || TRAIN_RATE_BY_LEVEL[12];
+  const availableTrainLevels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[troopType]).map(Number).sort((a, b) => a - b);
+  const trainRate =
+    TRAIN_RATE_BY_TYPE_LEVEL[troopType][trainLevel] ||
+    TRAIN_RATE_BY_TYPE_LEVEL[troopType][availableTrainLevels[availableTrainLevels.length - 1]];
   const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
 
   // 「資源消費減少」研究の効果を反映する(訓練=trainLevel、昇格=昇格後レベルtoLevelの研究が適用される)
@@ -196,11 +213,28 @@ function Day4Training() {
           <option value="promote">昇格</option>
         </select>
 
+        <label style={{ marginTop: 16, display: "block" }}>兵種</label>
+        <select
+          value={troopType}
+          onChange={(e) => {
+            const t = e.target.value as TroopType;
+            setTroopType(t);
+            const levels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[t]).map(Number);
+            setTrainLevel(Math.max(...levels));
+          }}
+        >
+          {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
+            <option key={t} value={t}>
+              {TROOP_TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+
         {mode === "train" ? (
           <>
             <label style={{ marginTop: 16, display: "block" }}>訓練する兵士のレベル</label>
             <select value={trainLevel} onChange={(e) => setTrainLevel(Number(e.target.value))}>
-              {TROOP_LEVELS.map((lv) => (
+              {availableTrainLevels.map((lv) => (
                 <option key={lv} value={lv}>
                   T{lv}
                 </option>
@@ -333,7 +367,7 @@ function Day4Training() {
       )}
 
       <p style={{ color: "#64748b", fontSize: "0.8rem", marginTop: 16 }}>
-        ※ 訓練ポイントの表(T10〜T12)・所要時間/資源(T11訓練48秒・T12訓練57.76秒・昇格9.4秒、いずれも弓兵の実際の表示時間ベースの実測値。速度ボーナス等により変動する可能性があります)は固定値です。兵種(盾/槍)で多少異なる可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
+        ※ 訓練ポイントの表(T10〜T12)は兵種に関係ない共通値です。訓練の所要時間・資源消費は兵種(盾/槍/弓)・レベル(T11/T12)ごとの実測値を反映しています。昇格の所要時間・資源消費(9.4秒/人)は今のところ弓兵の実測値を全兵種共通で使っています。速度ボーナス等により実際の時間は変動する可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
       </p>
     </>
   );
