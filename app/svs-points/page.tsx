@@ -131,7 +131,6 @@ function Day4Training() {
   const [inputMode, setInputMode] = useState<"count" | "speedup">("speedup");
   const [mode, setMode] = useState<"train" | "promote">("train");
   const [troopType, setTroopType] = useState<TroopType>("bow");
-  const [splitByType, setSplitByType] = useState(false);
   const [splitMethod, setSplitMethod] = useState<"manual" | "ratio">("manual");
   const [trainLevel, setTrainLevel] = useState<number>(12);
   const [fromLevel, setFromLevel] = useState<number>(11);
@@ -158,6 +157,7 @@ function Day4Training() {
   });
 
   const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
+  const isSplitFlow = mode === "train" && inputMode === "speedup";
 
   const availableTrainLevels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[troopType]).map(Number).sort((a, b) => a - b);
   const trainRate =
@@ -171,7 +171,10 @@ function Day4Training() {
   const reductionPct = RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12]?.[resourceResearchLevel] || 0;
   const reductionRatio = 1 - reductionPct / 100;
 
-  function resourceFor(rate: TrainRate, ratio: number = reductionRatio) {
+  function resourceFor(
+    rate: { food: number; wood: number; coal: number; iron: number },
+    ratio: number = reductionRatio
+  ) {
     return {
       food: rate.food * ratio,
       wood: rate.wood * ratio,
@@ -209,7 +212,7 @@ function Day4Training() {
   // 盾兵/槍兵/弓兵それぞれの加速時間を分けて入力した場合の内訳・合計(訓練モードのみ)
   const totalRatioPct = (Number(ratioByType.shield) || 0) + (Number(ratioByType.spear) || 0) + (Number(ratioByType.bow) || 0);
   const perTypeBreakdown =
-    mode === "train" && inputMode === "speedup" && splitByType
+    isSplitFlow
       ? (Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => {
           let seconds: number;
           if (splitMethod === "ratio") {
@@ -275,22 +278,26 @@ function Day4Training() {
           <option value="promote">昇格</option>
         </select>
 
-        <label style={{ marginTop: 16, display: "block" }}>兵種</label>
-        <select
-          value={troopType}
-          onChange={(e) => {
-            const t = e.target.value as TroopType;
-            setTroopType(t);
-            const levels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[t]).map(Number);
-            setTrainLevel(Math.max(...levels));
-          }}
-        >
-          {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
-            <option key={t} value={t}>
-              {TROOP_TYPE_LABEL[t]}
-            </option>
-          ))}
-        </select>
+        {mode === "train" && inputMode === "count" && (
+          <>
+            <label style={{ marginTop: 16, display: "block" }}>兵種</label>
+            <select
+              value={troopType}
+              onChange={(e) => {
+                const t = e.target.value as TroopType;
+                setTroopType(t);
+                const levels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[t]).map(Number);
+                setTrainLevel(Math.max(...levels));
+              }}
+            >
+              {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
+                <option key={t} value={t}>
+                  {TROOP_TYPE_LABEL[t]}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
 
         {mode === "train" ? (
           <>
@@ -325,7 +332,7 @@ function Day4Training() {
           </>
         )}
 
-        {!(mode === "train" && splitByType) && (
+        {!isSplitFlow && (
           <>
             <label style={{ marginTop: 16, display: "block" }}>
               T{reductionTargetLevel}訓練の「資源消費減少」研究レベル
@@ -361,7 +368,7 @@ function Day4Training() {
               placeholder="例: 1000"
             />
           </>
-        ) : mode === "train" && splitByType ? (
+        ) : isSplitFlow ? (
           <>
             <label style={{ marginTop: 16, display: "block" }}>配分方法</label>
             <select value={splitMethod} onChange={(e) => setSplitMethod(e.target.value as "manual" | "ratio")}>
@@ -537,20 +544,9 @@ function Day4Training() {
           </>
         )}
 
-        {mode === "train" && inputMode === "speedup" && (
-          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16 }}>
-            <input
-              type="checkbox"
-              checked={splitByType}
-              onChange={(e) => setSplitByType(e.target.checked)}
-              style={{ width: "auto" }}
-            />
-            盾兵・槍兵・弓兵で加速時間を分けて入力する
-          </label>
-        )}
       </div>
 
-      {splitByType && mode === "train" && inputMode === "speedup" ? (
+      {isSplitFlow ? (
         splitTotalCount > 0 && (
           <div className="card" style={{ marginTop: 16 }}>
             <h3>計算結果(兵種別)</h3>
@@ -653,4 +649,3 @@ export default function SvsPointsPage() {
     </main>
   );
 }
-
