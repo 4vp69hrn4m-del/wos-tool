@@ -132,6 +132,7 @@ function Day4Training() {
   const [mode, setMode] = useState<"train" | "promote">("train");
   const [troopType, setTroopType] = useState<TroopType>("bow");
   const [splitByType, setSplitByType] = useState(false);
+  const [splitMethod, setSplitMethod] = useState<"manual" | "ratio">("manual");
   const [trainLevel, setTrainLevel] = useState<number>(12);
   const [fromLevel, setFromLevel] = useState<number>(11);
   const [toLevel, setToLevel] = useState<number>(12);
@@ -143,6 +144,11 @@ function Day4Training() {
     shield: { d: "", h: "", m: "" },
     spear: { d: "", h: "", m: "" },
     bow: { d: "", h: "", m: "" },
+  });
+  const [ratioByType, setRatioByType] = useState<Record<TroopType, string>>({
+    shield: "",
+    spear: "",
+    bow: "",
   });
   const [valeriaLevel, setValeriaLevel] = useState<number>(0); // 0 = 未所持/選択なし
   const [resourceResearchLevelByType, setResourceResearchLevelByType] = useState<Record<TroopType, number>>({
@@ -201,11 +207,18 @@ function Day4Training() {
   };
 
   // 盾兵/槍兵/弓兵それぞれの加速時間を分けて入力した場合の内訳・合計(訓練モードのみ)
+  const totalRatioPct = (Number(ratioByType.shield) || 0) + (Number(ratioByType.spear) || 0) + (Number(ratioByType.bow) || 0);
   const perTypeBreakdown =
     mode === "train" && inputMode === "speedup" && splitByType
       ? (Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => {
-          const s = speedupByType[t];
-          const seconds = (Number(s.d) || 0) * 86400 + (Number(s.h) || 0) * 3600 + (Number(s.m) || 0) * 60;
+          let seconds: number;
+          if (splitMethod === "ratio") {
+            const pctOfTotal = Number(ratioByType[t]) || 0;
+            seconds = totalSpeedupSeconds * (pctOfTotal / 100);
+          } else {
+            const s = speedupByType[t];
+            seconds = (Number(s.d) || 0) * 86400 + (Number(s.h) || 0) * 3600 + (Number(s.m) || 0) * 60;
+          }
           const rate = TRAIN_RATE_BY_TYPE_LEVEL[t][trainLevel] || TRAIN_RATE_BY_TYPE_LEVEL[t][availableTrainLevels[availableTrainLevels.length - 1]];
           const count = Math.floor(seconds / rate.secPerTroop);
           const points = Math.round(count * trainPointsPer * 10) / 10;
@@ -350,21 +363,22 @@ function Day4Training() {
           </>
         ) : mode === "train" && splitByType ? (
           <>
-            <label style={{ marginTop: 16, display: "block" }}>
-              兵種ごとに使う加速アイテムの時間(任意・空欄は0扱い)
-            </label>
-            {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
-              <div key={t} style={{ marginTop: 8 }}>
-                <label style={{ fontSize: "0.85rem", color: "#94a3b8" }}>{TROOP_TYPE_LABEL[t]}</label>
+            <label style={{ marginTop: 16, display: "block" }}>配分方法</label>
+            <select value={splitMethod} onChange={(e) => setSplitMethod(e.target.value as "manual" | "ratio")}>
+              <option value="ratio">合計の加速時間を割合で配分する</option>
+              <option value="manual">兵種ごとに時間を直接入力する</option>
+            </select>
+
+            {splitMethod === "ratio" ? (
+              <>
+                <label style={{ marginTop: 16, display: "block" }}>持っている加速アイテムの合計時間</label>
                 <div className="row">
                   <div>
                     <input
                       type="number"
                       min={0}
-                      value={speedupByType[t].d}
-                      onChange={(e) =>
-                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], d: e.target.value } }))
-                      }
+                      value={speedupDays}
+                      onChange={(e) => setSpeedupDays(e.target.value)}
                       placeholder="日"
                     />
                   </div>
@@ -372,10 +386,8 @@ function Day4Training() {
                     <input
                       type="number"
                       min={0}
-                      value={speedupByType[t].h}
-                      onChange={(e) =>
-                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], h: e.target.value } }))
-                      }
+                      value={speedupHours}
+                      onChange={(e) => setSpeedupHours(e.target.value)}
                       placeholder="時間"
                     />
                   </div>
@@ -383,29 +395,112 @@ function Day4Training() {
                     <input
                       type="number"
                       min={0}
-                      value={speedupByType[t].m}
-                      onChange={(e) =>
-                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], m: e.target.value } }))
-                      }
+                      value={speedupMinutes}
+                      onChange={(e) => setSpeedupMinutes(e.target.value)}
                       placeholder="分"
                     />
                   </div>
                 </div>
-                <select
-                  style={{ marginTop: 4 }}
-                  value={resourceResearchLevelByType[t]}
-                  onChange={(e) =>
-                    setResourceResearchLevelByType((prev) => ({ ...prev, [t]: Number(e.target.value) }))
-                  }
-                >
-                  {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
-                    <option key={lv} value={lv}>
-                      {TROOP_TYPE_LABEL[t]}の資源消費減少研究: {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+
+                <label style={{ marginTop: 16, display: "block" }}>
+                  兵種ごとの割り当て割合(%・合計
+                  <span style={{ color: totalRatioPct === 100 ? "#4ade80" : "#f87171" }}>{totalRatioPct}</span>
+                  %)
+                </label>
+                {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
+                  <div key={t} style={{ marginTop: 8 }}>
+                    <label style={{ fontSize: "0.85rem", color: "#94a3b8" }}>{TROOP_TYPE_LABEL[t]}(%)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={ratioByType[t]}
+                      onChange={(e) => setRatioByType((prev) => ({ ...prev, [t]: e.target.value }))}
+                      placeholder="例: 33"
+                    />
+                    <select
+                      style={{ marginTop: 4 }}
+                      value={resourceResearchLevelByType[t]}
+                      onChange={(e) =>
+                        setResourceResearchLevelByType((prev) => ({ ...prev, [t]: Number(e.target.value) }))
+                      }
+                    >
+                      {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
+                        <option key={lv} value={lv}>
+                          {TROOP_TYPE_LABEL[t]}の資源消費減少研究:{" "}
+                          {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                {totalRatioPct !== 100 && (
+                  <p style={{ color: "#f87171", fontSize: "0.85rem", marginTop: 8 }}>
+                    ※ 割合の合計が100%になっていません(今は{totalRatioPct}%)
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <label style={{ marginTop: 16, display: "block" }}>
+                  兵種ごとに使う加速アイテムの時間(任意・空欄は0扱い)
+                </label>
+                {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
+                  <div key={t} style={{ marginTop: 8 }}>
+                    <label style={{ fontSize: "0.85rem", color: "#94a3b8" }}>{TROOP_TYPE_LABEL[t]}</label>
+                    <div className="row">
+                      <div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={speedupByType[t].d}
+                          onChange={(e) =>
+                            setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], d: e.target.value } }))
+                          }
+                          placeholder="日"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={speedupByType[t].h}
+                          onChange={(e) =>
+                            setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], h: e.target.value } }))
+                          }
+                          placeholder="時間"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="number"
+                          min={0}
+                          value={speedupByType[t].m}
+                          onChange={(e) =>
+                            setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], m: e.target.value } }))
+                          }
+                          placeholder="分"
+                        />
+                      </div>
+                    </div>
+                    <select
+                      style={{ marginTop: 4 }}
+                      value={resourceResearchLevelByType[t]}
+                      onChange={(e) =>
+                        setResourceResearchLevelByType((prev) => ({ ...prev, [t]: Number(e.target.value) }))
+                      }
+                    >
+                      {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
+                        <option key={lv} value={lv}>
+                          {TROOP_TYPE_LABEL[t]}の資源消費減少研究:{" "}
+                          {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </>
+            )}
           </>
         ) : (
           <>
