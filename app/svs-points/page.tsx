@@ -204,8 +204,7 @@ function Day4Training() {
             <select value={trainLevel} onChange={(e) => setTrainLevel(Number(e.target.value))}>
               {TROOP_LEVELS.map((lv) => (
                 <option key={lv} value={lv}>
-                  T{lv}(1人{TRAINING_POINTS_BY_LEVEL[lv]}ポイント
-                  {TRAIN_RATE_BY_LEVEL[lv] ? `・${TRAIN_RATE_BY_LEVEL[lv].secPerTroop}秒/人` : ""})
+                  T{lv}
                 </option>
               ))}
             </select>
@@ -377,4 +376,3 @@ export default function SvsPointsPage() {
     </main>
   );
 }
-
