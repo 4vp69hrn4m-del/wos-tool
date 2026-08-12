@@ -131,6 +131,7 @@ function Day4Training() {
   const [inputMode, setInputMode] = useState<"count" | "speedup">("speedup");
   const [mode, setMode] = useState<"train" | "promote">("train");
   const [troopType, setTroopType] = useState<TroopType>("bow");
+  const [splitByType, setSplitByType] = useState(false);
   const [trainLevel, setTrainLevel] = useState<number>(12);
   const [fromLevel, setFromLevel] = useState<number>(11);
   const [toLevel, setToLevel] = useState<number>(12);
@@ -138,8 +139,17 @@ function Day4Training() {
   const [speedupDays, setSpeedupDays] = useState<string>("");
   const [speedupHours, setSpeedupHours] = useState<string>("");
   const [speedupMinutes, setSpeedupMinutes] = useState<string>("");
+  const [speedupByType, setSpeedupByType] = useState<Record<TroopType, { d: string; h: string; m: string }>>({
+    shield: { d: "", h: "", m: "" },
+    spear: { d: "", h: "", m: "" },
+    bow: { d: "", h: "", m: "" },
+  });
   const [valeriaLevel, setValeriaLevel] = useState<number>(0); // 0 = 未所持/選択なし
-  const [resourceResearchLevel, setResourceResearchLevel] = useState<number>(0);
+  const [resourceResearchLevelByType, setResourceResearchLevelByType] = useState<Record<TroopType, number>>({
+    shield: 0,
+    spear: 0,
+    bow: 0,
+  });
 
   const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
 
@@ -149,17 +159,23 @@ function Day4Training() {
     TRAIN_RATE_BY_TYPE_LEVEL[troopType][availableTrainLevels[availableTrainLevels.length - 1]];
   const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
 
-  // 「資源消費減少」研究の効果を反映する(訓練=trainLevel、昇格=昇格後レベルtoLevelの研究が適用される)
+  // 「資源消費減少」研究の効果を反映する(訓練=兵種ごとのtrainLevel研究、昇格=昇格後レベルtoLevelの研究が適用される)
   const reductionTargetLevel = mode === "train" ? trainLevel : toLevel;
+  const resourceResearchLevel = mode === "train" ? resourceResearchLevelByType[troopType] : resourceResearchLevelByType.bow;
   const reductionPct = RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12]?.[resourceResearchLevel] || 0;
   const reductionRatio = 1 - reductionPct / 100;
+
+  function resourceFor(rate: TrainRate, ratio: number = reductionRatio) {
+    return {
+      food: rate.food * ratio,
+      wood: rate.wood * ratio,
+      coal: rate.coal * ratio,
+      iron: rate.iron * ratio,
+    };
+  }
+
   const baseResource = mode === "train" ? trainRate : PROMOTE_RESOURCE_PER_TROOP;
-  const resourcePerTroop = {
-    food: baseResource.food * reductionRatio,
-    wood: baseResource.wood * reductionRatio,
-    coal: baseResource.coal * reductionRatio,
-    iron: baseResource.iron * reductionRatio,
-  };
+  const resourcePerTroop = resourceFor(baseResource);
 
   const totalSpeedupSeconds =
     (Number(speedupDays) || 0) * 86400 +
@@ -182,6 +198,39 @@ function Day4Training() {
     wood: Math.round(troopCount * resourcePerTroop.wood),
     coal: Math.round(troopCount * resourcePerTroop.coal),
     iron: Math.round(troopCount * resourcePerTroop.iron),
+  };
+
+  // 盾兵/槍兵/弓兵それぞれの加速時間を分けて入力した場合の内訳・合計(訓練モードのみ)
+  const perTypeBreakdown =
+    mode === "train" && inputMode === "speedup" && splitByType
+      ? (Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => {
+          const s = speedupByType[t];
+          const seconds = (Number(s.d) || 0) * 86400 + (Number(s.h) || 0) * 3600 + (Number(s.m) || 0) * 60;
+          const rate = TRAIN_RATE_BY_TYPE_LEVEL[t][trainLevel] || TRAIN_RATE_BY_TYPE_LEVEL[t][availableTrainLevels[availableTrainLevels.length - 1]];
+          const count = Math.floor(seconds / rate.secPerTroop);
+          const points = Math.round(count * trainPointsPer * 10) / 10;
+          const pct = RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12]?.[resourceResearchLevelByType[t]] || 0;
+          const res = resourceFor(rate, 1 - pct / 100);
+          return {
+            type: t,
+            count,
+            points,
+            resource: {
+              food: Math.round(count * res.food),
+              wood: Math.round(count * res.wood),
+              coal: Math.round(count * res.coal),
+              iron: Math.round(count * res.iron),
+            },
+          };
+        })
+      : [];
+  const splitTotalCount = perTypeBreakdown.reduce((s, b) => s + b.count, 0);
+  const splitTotalPoints = Math.round(perTypeBreakdown.reduce((s, b) => s + b.points, 0) * 10) / 10;
+  const splitTotalResource = {
+    food: perTypeBreakdown.reduce((s, b) => s + b.resource.food, 0),
+    wood: perTypeBreakdown.reduce((s, b) => s + b.resource.wood, 0),
+    coal: perTypeBreakdown.reduce((s, b) => s + b.resource.coal, 0),
+    iron: perTypeBreakdown.reduce((s, b) => s + b.resource.iron, 0),
   };
 
   return (
@@ -263,21 +312,28 @@ function Day4Training() {
           </>
         )}
 
-        <label style={{ marginTop: 16, display: "block" }}>
-          T{reductionTargetLevel}訓練の「資源消費減少」研究レベル
-        </label>
-        <select
-          value={resourceResearchLevel}
-          onChange={(e) => setResourceResearchLevel(Number(e.target.value))}
-        >
-          {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12] || {}).map(
-            ([lv, pct]) => (
-              <option key={lv} value={lv}>
-                {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
-              </option>
-            )
-          )}
-        </select>
+        {!(mode === "train" && splitByType) && (
+          <>
+            <label style={{ marginTop: 16, display: "block" }}>
+              T{reductionTargetLevel}訓練の「資源消費減少」研究レベル
+            </label>
+            <select
+              value={resourceResearchLevel}
+              onChange={(e) => {
+                const key = mode === "train" ? troopType : "bow";
+                setResourceResearchLevelByType((prev) => ({ ...prev, [key]: Number(e.target.value) }));
+              }}
+            >
+              {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12] || {}).map(
+                ([lv, pct]) => (
+                  <option key={lv} value={lv}>
+                    {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
+                  </option>
+                )
+              )}
+            </select>
+          </>
+        )}
 
         {inputMode === "count" ? (
           <>
@@ -291,6 +347,65 @@ function Day4Training() {
               onChange={(e) => setCount(e.target.value)}
               placeholder="例: 1000"
             />
+          </>
+        ) : mode === "train" && splitByType ? (
+          <>
+            <label style={{ marginTop: 16, display: "block" }}>
+              兵種ごとに使う加速アイテムの時間(任意・空欄は0扱い)
+            </label>
+            {(Object.keys(TROOP_TYPE_LABEL) as TroopType[]).map((t) => (
+              <div key={t} style={{ marginTop: 8 }}>
+                <label style={{ fontSize: "0.85rem", color: "#94a3b8" }}>{TROOP_TYPE_LABEL[t]}</label>
+                <div className="row">
+                  <div>
+                    <input
+                      type="number"
+                      min={0}
+                      value={speedupByType[t].d}
+                      onChange={(e) =>
+                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], d: e.target.value } }))
+                      }
+                      placeholder="日"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      min={0}
+                      value={speedupByType[t].h}
+                      onChange={(e) =>
+                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], h: e.target.value } }))
+                      }
+                      placeholder="時間"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      min={0}
+                      value={speedupByType[t].m}
+                      onChange={(e) =>
+                        setSpeedupByType((prev) => ({ ...prev, [t]: { ...prev[t], m: e.target.value } }))
+                      }
+                      placeholder="分"
+                    />
+                  </div>
+                </div>
+                <select
+                  style={{ marginTop: 4 }}
+                  value={resourceResearchLevelByType[t]}
+                  onChange={(e) =>
+                    setResourceResearchLevelByType((prev) => ({ ...prev, [t]: Number(e.target.value) }))
+                  }
+                >
+                  {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
+                    <option key={lv} value={lv}>
+                      {TROOP_TYPE_LABEL[t]}の資源消費減少研究: {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
           </>
         ) : (
           <>
@@ -326,9 +441,42 @@ function Day4Training() {
             </div>
           </>
         )}
+
+        {mode === "train" && inputMode === "speedup" && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 16 }}>
+            <input
+              type="checkbox"
+              checked={splitByType}
+              onChange={(e) => setSplitByType(e.target.checked)}
+              style={{ width: "auto" }}
+            />
+            盾兵・槍兵・弓兵で加速時間を分けて入力する
+          </label>
+        )}
       </div>
 
-      {troopCount > 0 && (
+      {splitByType && mode === "train" && inputMode === "speedup" ? (
+        splitTotalCount > 0 && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>計算結果(兵種別)</h3>
+            {perTypeBreakdown.map((b) => (
+              <p key={b.type}>
+                {TROOP_TYPE_LABEL[b.type]}: {b.count.toLocaleString()}人・{b.points.toLocaleString()}ポイント
+                (食料{b.resource.food.toLocaleString()} / 木材{b.resource.wood.toLocaleString()} / 石炭
+                {b.resource.coal.toLocaleString()} / 鉄鉱石{b.resource.iron.toLocaleString()})
+              </p>
+            ))}
+            <p style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#4ade80", marginTop: 12 }}>
+              合計: {splitTotalCount.toLocaleString()}人・{splitTotalPoints.toLocaleString()}ポイント
+            </p>
+            <p>
+              必要資源合計: 🍖食料{splitTotalResource.food.toLocaleString()} / 🪵木材
+              {splitTotalResource.wood.toLocaleString()} / ⚫石炭{splitTotalResource.coal.toLocaleString()} /{" "}
+              ⛏鉄鉱石{splitTotalResource.iron.toLocaleString()}
+            </p>
+          </div>
+        )
+      ) : troopCount > 0 && (
         <div className="card" style={{ marginTop: 16 }}>
           <h3>計算結果</h3>
           {inputMode === "speedup" && (
