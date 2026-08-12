@@ -132,21 +132,6 @@ const RESOURCE_REDUCTION_BY_LEVEL: Record<11 | 12, Record<number, number>> = {
   12: { 0: 0, 1: 2.5, 2: 5, 3: 7.5, 4: 10, 5: 12.5, 6: 15, 7: 17.5, 8: 20, 9: 22.5, 10: 25 },
 };
 
-// 訓練速度ボーナスの基準値。今登録している「秒/人」の実測値は、みんなが持っているこの基準値込みの数値
-const BASE_TRAINING_SPEED_BONUS_PCT = 207.2;
-// SVS当日に追加でかかる可能性のある訓練速度ボーナス
-const ROLE_SKILL_TRAINING_SPEED_PCT = 50; // 役職スキル
-const CHANCELLOR_SKILL_TRAINING_SPEED_PCT = 30; // 執政官スキル
-
-// 訓練速度ボーナスが変わった時の秒数を再計算する
-// 元の秒数(baseSec)は基準値(BASE_TRAINING_SPEED_BONUS_PCT)込みなので、
-// 一度ボーナス無しの状態に戻してから、新しい合計ボーナスで割り直す
-function adjustSecForSpeedBonus(baseSec: number, extraBonusPct: number): number {
-  const zeroBonusSec = baseSec * (1 + BASE_TRAINING_SPEED_BONUS_PCT / 100);
-  const totalBonusPct = BASE_TRAINING_SPEED_BONUS_PCT + extraBonusPct;
-  return zeroBonusSec / (1 + totalBonusPct / 100);
-}
-
 function Day4Training() {
   const [inputMode, setInputMode] = useState<"count" | "speedup">("speedup");
   const [mode, setMode] = useState<"train" | "promote">("train");
@@ -175,21 +160,14 @@ function Day4Training() {
     spear: 0,
     bow: 0,
   });
-  const [roleSkillActive, setRoleSkillActive] = useState(false);
-  const [chancellorSkillActive, setChancellorSkillActive] = useState(false);
-
   const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
   const isSplitFlow = mode === "train" && inputMode === "speedup";
-  const extraSpeedBonusPct =
-    (roleSkillActive ? ROLE_SKILL_TRAINING_SPEED_PCT : 0) +
-    (chancellorSkillActive ? CHANCELLOR_SKILL_TRAINING_SPEED_PCT : 0);
 
   const availableTrainLevels = Object.keys(TRAIN_RATE_BY_TYPE_LEVEL[troopType]).map(Number).sort((a, b) => a - b);
   const trainRate =
     TRAIN_RATE_BY_TYPE_LEVEL[troopType][trainLevel] ||
     TRAIN_RATE_BY_TYPE_LEVEL[troopType][availableTrainLevels[availableTrainLevels.length - 1]];
-  const secPerTroop =
-    mode === "train" ? adjustSecForSpeedBonus(trainRate.secPerTroop, extraSpeedBonusPct) : PROMOTE_SEC_PER_TROOP;
+  const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
 
   // 「資源消費減少」研究の効果を反映する(訓練=兵種ごとのtrainLevel研究、昇格=昇格後レベルtoLevelの研究が適用される)
   const reductionTargetLevel = mode === "train" ? trainLevel : toLevel;
@@ -249,8 +227,7 @@ function Day4Training() {
             seconds = (Number(s.d) || 0) * 86400 + (Number(s.h) || 0) * 3600 + (Number(s.m) || 0) * 60;
           }
           const rate = TRAIN_RATE_BY_TYPE_LEVEL[t][trainLevel] || TRAIN_RATE_BY_TYPE_LEVEL[t][availableTrainLevels[availableTrainLevels.length - 1]];
-          const adjustedSec = adjustSecForSpeedBonus(rate.secPerTroop, extraSpeedBonusPct);
-          const count = Math.floor(seconds / adjustedSec);
+          const count = Math.floor(seconds / rate.secPerTroop);
           const points = Math.round(count * trainPointsPer * 10) / 10;
           const pct = RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12]?.[resourceResearchLevelByType[t]] || 0;
           const res = resourceFor(rate, 1 - pct / 100);
@@ -292,32 +269,6 @@ function Day4Training() {
             </option>
           ))}
         </select>
-
-        {mode === "train" && (
-          <>
-            <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-              SVS当日に追加でかかる訓練速度ボーナス(任意。基準の訓練速度+{BASE_TRAINING_SPEED_BONUS_PCT}%は既に織り込み済みです。この基準値は人によって誤差があります)
-            </p>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={roleSkillActive}
-                onChange={(e) => setRoleSkillActive(e.target.checked)}
-                style={{ width: "auto" }}
-              />
-              役職スキル(訓練速度+{ROLE_SKILL_TRAINING_SPEED_PCT}%)
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-              <input
-                type="checkbox"
-                checked={chancellorSkillActive}
-                onChange={(e) => setChancellorSkillActive(e.target.checked)}
-                style={{ width: "auto" }}
-              />
-              執政官スキル(訓練速度+{CHANCELLOR_SKILL_TRAINING_SPEED_PCT}%)
-            </label>
-          </>
-        )}
 
         <label style={{ marginTop: 16, display: "block" }}>入力方法</label>
         <select value={inputMode} onChange={(e) => setInputMode(e.target.value as "count" | "speedup")}>
