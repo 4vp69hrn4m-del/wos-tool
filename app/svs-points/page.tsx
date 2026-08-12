@@ -576,6 +576,22 @@ function Day4Training() {
               分 ÷ {secPerTroop}秒/人 = <strong>{troopCount.toLocaleString()}人</strong>できます
             </p>
           )}
+          {inputMode === "count" &&
+            (() => {
+              const totalSeconds = troopCount * secPerTroop;
+              const days = Math.floor(totalSeconds / 86400);
+              const hours = Math.floor((totalSeconds % 86400) / 3600);
+              const minutes = Math.floor((totalSeconds % 3600) / 60);
+              return (
+                <p>
+                  {troopCount.toLocaleString()}人 × {secPerTroop}秒/人 = 必要時間{" "}
+                  <strong>
+                    {days}日{hours}時間{minutes}分
+                  </strong>
+                  (加速アイテムなしの場合)
+                </p>
+              );
+            })()}
           {mode === "train" ? (
             <>
               <p>
