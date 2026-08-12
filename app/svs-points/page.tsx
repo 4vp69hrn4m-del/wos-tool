@@ -98,10 +98,12 @@ function Day3Beast() {
   );
 }
 
-// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(実測値・T12弓兵の例)
-const TRAIN_SEC_PER_TROOP = 215; // 訓練(Lv.12)
-const TRAIN_RESOURCE_PER_TROOP = { food: 5617, wood: 8329, ore: 1356, crystal: 453 };
-const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(Lv.11→12)
+// 訓練・昇格それぞれの、1人あたりの所要時間(秒)と資源消費(実測値・弓兵の例、レベル別)
+const TRAIN_RATE_BY_LEVEL: Record<number, { secPerTroop: number; food: number; wood: number; ore: number; crystal: number }> = {
+  11: { secPerTroop: 180, food: 3486, wood: 5159, ore: 865, crystal: 280 },
+  12: { secPerTroop: 215, food: 5617, wood: 8329, ore: 1356, crystal: 453 },
+};
+const PROMOTE_SEC_PER_TROOP = 9.4035; // 昇格(T11→T12)
 const PROMOTE_RESOURCE_PER_TROOP = { food: 2176, wood: 3216, ore: 536, crystal: 168 };
 
 function Day4Training() {
@@ -114,9 +116,13 @@ function Day4Training() {
   const [speedupDays, setSpeedupDays] = useState<string>("");
   const [speedupHours, setSpeedupHours] = useState<string>("");
   const [speedupMinutes, setSpeedupMinutes] = useState<string>("");
+  const [valeriaLevel, setValeriaLevel] = useState<number>(0); // 0 = 未所持/選択なし
 
-  const secPerTroop = mode === "train" ? TRAIN_SEC_PER_TROOP : PROMOTE_SEC_PER_TROOP;
-  const resourcePerTroop = mode === "train" ? TRAIN_RESOURCE_PER_TROOP : PROMOTE_RESOURCE_PER_TROOP;
+  const bonusPct = VALERIA_BONUS_BY_LEVEL[valeriaLevel] || 0;
+
+  const trainRate = TRAIN_RATE_BY_LEVEL[trainLevel] || TRAIN_RATE_BY_LEVEL[12];
+  const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
+  const resourcePerTroop = mode === "train" ? trainRate : PROMOTE_RESOURCE_PER_TROOP;
 
   const totalSpeedupSeconds =
     (Number(speedupDays) || 0) * 86400 +
@@ -126,11 +132,12 @@ function Day4Training() {
   const troopCount =
     inputMode === "count" ? Number(count) || 0 : Math.floor(totalSpeedupSeconds / secPerTroop);
 
-  const trainPointsPer = TRAINING_POINTS_BY_LEVEL[trainLevel] || 0;
+  const trainPointsPer = (TRAINING_POINTS_BY_LEVEL[trainLevel] || 0) * (1 + bonusPct / 100);
   const trainTotal = Math.round(troopCount * trainPointsPer * 10) / 10;
 
   const promotePointsPer =
-    (TRAINING_POINTS_BY_LEVEL[toLevel] || 0) - (TRAINING_POINTS_BY_LEVEL[fromLevel] || 0);
+    ((TRAINING_POINTS_BY_LEVEL[toLevel] || 0) - (TRAINING_POINTS_BY_LEVEL[fromLevel] || 0)) *
+    (1 + bonusPct / 100);
   const promoteTotal = Math.round(troopCount * promotePointsPer * 10) / 10;
 
   const totalResource = {
@@ -147,7 +154,17 @@ function Day4Training() {
       </p>
 
       <div className="card" style={{ marginTop: 16 }}>
-        <label>入力方法</label>
+        <label>ヴァレリアのスキルレベル(ステップポイント獲得量ボーナス)</label>
+        <select value={valeriaLevel} onChange={(e) => setValeriaLevel(Number(e.target.value))}>
+          <option value={0}>未所持 / 選択なし(ボーナスなし)</option>
+          {Object.entries(VALERIA_BONUS_BY_LEVEL).map(([lv, pct]) => (
+            <option key={lv} value={lv}>
+              Lv.{lv}(+{pct}%)
+            </option>
+          ))}
+        </select>
+
+        <label style={{ marginTop: 16, display: "block" }}>入力方法</label>
         <select value={inputMode} onChange={(e) => setInputMode(e.target.value as "count" | "speedup")}>
           <option value="speedup">持っている加速アイテムの時間から計算</option>
           <option value="count">人数を直接入力</option>
@@ -155,17 +172,18 @@ function Day4Training() {
 
         <label style={{ marginTop: 16, display: "block" }}>種類</label>
         <select value={mode} onChange={(e) => setMode(e.target.value as "train" | "promote")}>
-          <option value="train">新規訓練(Lv.12、215秒/人)</option>
-          <option value="promote">昇格(Lv.11→12、約9.4秒/人)</option>
+          <option value="train">新規訓練</option>
+          <option value="promote">昇格(T11→T12、約9.4秒/人)</option>
         </select>
 
         {mode === "train" ? (
           <>
-            <label style={{ marginTop: 16, display: "block" }}>訓練する兵士のレベル(ポイント計算用)</label>
+            <label style={{ marginTop: 16, display: "block" }}>訓練する兵士のレベル</label>
             <select value={trainLevel} onChange={(e) => setTrainLevel(Number(e.target.value))}>
               {TROOP_LEVELS.map((lv) => (
                 <option key={lv} value={lv}>
-                  Lv.{lv}(1人{TRAINING_POINTS_BY_LEVEL[lv]}ポイント)
+                  T{lv}(1人{TRAINING_POINTS_BY_LEVEL[lv]}ポイント
+                  {TRAIN_RATE_BY_LEVEL[lv] ? `・${TRAIN_RATE_BY_LEVEL[lv].secPerTroop}秒/人` : ""})
                 </option>
               ))}
             </select>
@@ -176,7 +194,7 @@ function Day4Training() {
             <select value={fromLevel} onChange={(e) => setFromLevel(Number(e.target.value))}>
               {TROOP_LEVELS.map((lv) => (
                 <option key={lv} value={lv}>
-                  Lv.{lv}
+                  T{lv}
                 </option>
               ))}
             </select>
@@ -185,7 +203,7 @@ function Day4Training() {
             <select value={toLevel} onChange={(e) => setToLevel(Number(e.target.value))}>
               {TROOP_LEVELS.map((lv) => (
                 <option key={lv} value={lv}>
-                  Lv.{lv}
+                  T{lv}
                 </option>
               ))}
             </select>
@@ -253,7 +271,8 @@ function Day4Training() {
           {mode === "train" ? (
             <>
               <p>
-                1人あたりの獲得ポイント: {trainPointsPer}(Lv.{trainLevel})
+                1人あたりの獲得ポイント: {TRAINING_POINTS_BY_LEVEL[trainLevel]}(T{trainLevel}) × (1 +{" "}
+                {bonusPct}%) = {trainPointsPer.toFixed(1)}
               </p>
               <p style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#4ade80" }}>
                 予想獲得ポイント合計: {trainTotal.toLocaleString()}ポイント
@@ -262,8 +281,9 @@ function Day4Training() {
           ) : (
             <>
               <p>
-                1人あたりの獲得ポイント: {TRAINING_POINTS_BY_LEVEL[toLevel]}(Lv.{toLevel}) −{" "}
-                {TRAINING_POINTS_BY_LEVEL[fromLevel]}(Lv.{fromLevel}) = {promotePointsPer}
+                1人あたりの獲得ポイント: ({TRAINING_POINTS_BY_LEVEL[toLevel]}(T{toLevel}) −{" "}
+                {TRAINING_POINTS_BY_LEVEL[fromLevel]}(T{fromLevel})) × (1 + {bonusPct}%) ={" "}
+                {promotePointsPer.toFixed(1)}
               </p>
               <p style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#4ade80" }}>
                 予想獲得ポイント合計: {promoteTotal.toLocaleString()}ポイント
@@ -278,7 +298,7 @@ function Day4Training() {
       )}
 
       <p style={{ color: "#64748b", fontSize: "0.8rem", marginTop: 16 }}>
-        ※ 訓練ポイントの表(Lv.10〜12)・所要時間/資源(訓練215秒・昇格9.4秒 いずれもT12弓兵の実測値)は固定値です。兵種(盾/槍)で多少異なる可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
+        ※ 訓練ポイントの表(T10〜T12)・所要時間/資源(T11訓練180秒・T12訓練215秒・昇格9.4秒、いずれも弓兵の実測値)は固定値です。兵種(盾/槍)で多少異なる可能性があります。昇格ポイントは「昇格後レベルの訓練ポイント−昇格前レベルの訓練ポイント」というゲーム内の仕様通りに計算しています。
       </p>
     </>
   );
@@ -321,4 +341,3 @@ export default function SvsPointsPage() {
     </main>
   );
 }
-　
