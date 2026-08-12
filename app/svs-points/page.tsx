@@ -132,19 +132,16 @@ function Day4Training() {
   const trainRate = TRAIN_RATE_BY_LEVEL[trainLevel] || TRAIN_RATE_BY_LEVEL[12];
   const secPerTroop = mode === "train" ? trainRate.secPerTroop : PROMOTE_SEC_PER_TROOP;
 
-  // 訓練の場合のみ「資源消費減少」研究の効果を反映する(昇格側のデータはまだ無いため未反映)
-  const reductionPct =
-    mode === "train" ? RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12]?.[resourceResearchLevel] || 0 : 0;
+  // 「資源消費減少」研究の効果を反映する(訓練=trainLevel、昇格=昇格後レベルtoLevelの研究が適用される)
+  const reductionTargetLevel = mode === "train" ? trainLevel : toLevel;
+  const reductionPct = RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12]?.[resourceResearchLevel] || 0;
   const reductionRatio = 1 - reductionPct / 100;
-  const resourcePerTroop =
-    mode === "train"
-      ? {
-          food: trainRate.food * reductionRatio,
-          wood: trainRate.wood * reductionRatio,
-          ore: trainRate.ore * reductionRatio,
-          crystal: trainRate.crystal * reductionRatio,
-        }
-      : PROMOTE_RESOURCE_PER_TROOP;
+  const baseResource = mode === "train" ? trainRate : PROMOTE_RESOURCE_PER_TROOP;
+  const resourcePerTroop = {
+    food: baseResource.food * reductionRatio,
+    wood: baseResource.wood * reductionRatio,
+    ore: baseResource.ore * reductionRatio,
+  };
 
   const totalSpeedupSeconds =
     (Number(speedupDays) || 0) * 86400 +
@@ -166,7 +163,6 @@ function Day4Training() {
     food: Math.round(troopCount * resourcePerTroop.food),
     wood: Math.round(troopCount * resourcePerTroop.wood),
     ore: Math.round(troopCount * resourcePerTroop.ore),
-    crystal: Math.round(troopCount * resourcePerTroop.crystal),
   };
 
   return (
@@ -208,20 +204,6 @@ function Day4Training() {
                 </option>
               ))}
             </select>
-
-            <label style={{ marginTop: 16, display: "block" }}>
-              T{trainLevel}訓練の「資源消費減少」研究レベル
-            </label>
-            <select
-              value={resourceResearchLevel}
-              onChange={(e) => setResourceResearchLevel(Number(e.target.value))}
-            >
-              {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[trainLevel as 11 | 12] || {}).map(([lv, pct]) => (
-                <option key={lv} value={lv}>
-                  {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
-                </option>
-              ))}
-            </select>
           </>
         ) : (
           <>
@@ -244,6 +226,22 @@ function Day4Training() {
             </select>
           </>
         )}
+
+        <label style={{ marginTop: 16, display: "block" }}>
+          T{reductionTargetLevel}訓練の「資源消費減少」研究レベル
+        </label>
+        <select
+          value={resourceResearchLevel}
+          onChange={(e) => setResourceResearchLevel(Number(e.target.value))}
+        >
+          {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12] || {}).map(
+            ([lv, pct]) => (
+              <option key={lv} value={lv}>
+                {lv === "0" ? "未研究(0%)" : `Lv.${lv}(-${pct}%)`}
+              </option>
+            )
+          )}
+        </select>
 
         {inputMode === "count" ? (
           <>
@@ -327,7 +325,7 @@ function Day4Training() {
           )}
           <p style={{ marginTop: 12 }}>
             必要資源: 🍖食料{totalResource.food.toLocaleString()} / 🪵木材{totalResource.wood.toLocaleString()}{" "}
-            / ⛏鉄鉱石{totalResource.ore.toLocaleString()} / 💎クリスタル{totalResource.crystal.toLocaleString()}
+            / ⛏鉄鉱石{totalResource.ore.toLocaleString()}
           </p>
         </div>
       )}
