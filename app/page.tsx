@@ -361,6 +361,9 @@ export default function Home() {
         <p>
           <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
         </p>
+        <p>
+          <Link href="/svs-points">→ SVSポイント計算(氷原の巨獣狩り)</Link>
+        </p>
       </div>
     </div>
   );
