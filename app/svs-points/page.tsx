@@ -167,7 +167,7 @@ function Day4Training() {
 
   // 「資源消費減少」研究の効果を反映する(訓練=兵種ごとのtrainLevel研究、昇格=昇格後レベルtoLevelの研究が適用される)
   const reductionTargetLevel = mode === "train" ? trainLevel : toLevel;
-  const resourceResearchLevel = mode === "train" ? resourceResearchLevelByType[troopType] : resourceResearchLevelByType.bow;
+  const resourceResearchLevel = resourceResearchLevelByType[troopType];
   const reductionPct = RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12]?.[resourceResearchLevel] || 0;
   const reductionRatio = 1 - reductionPct / 100;
 
@@ -278,7 +278,7 @@ function Day4Training() {
           <option value="promote">昇格</option>
         </select>
 
-        {mode === "train" && inputMode === "count" && (
+        {inputMode === "count" && (
           <>
             <label style={{ marginTop: 16, display: "block" }}>兵種</label>
             <select
@@ -339,10 +339,9 @@ function Day4Training() {
             </label>
             <select
               value={resourceResearchLevel}
-              onChange={(e) => {
-                const key = mode === "train" ? troopType : "bow";
-                setResourceResearchLevelByType((prev) => ({ ...prev, [key]: Number(e.target.value) }));
-              }}
+              onChange={(e) =>
+                setResourceResearchLevelByType((prev) => ({ ...prev, [troopType]: Number(e.target.value) }))
+              }
             >
               {Object.entries(RESOURCE_REDUCTION_BY_LEVEL[reductionTargetLevel as 11 | 12] || {}).map(
                 ([lv, pct]) => (
