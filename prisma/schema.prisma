@@ -23,6 +23,10 @@ model Hero {
 
   skills    HeroSkill[] // スキル(何個でも登録可能。戦闘シミュレーターの計算に使用)
 
+  garrisonAsShield GarrisonParticipant[] @relation("GarrisonShieldHero")
+  garrisonAsSpear  GarrisonParticipant[] @relation("GarrisonSpearHero")
+  garrisonAsBow    GarrisonParticipant[] @relation("GarrisonBowHero")
+
   // 専用装備によるステータス上昇(%・乗算バフ。殺傷力・HPのみ)
   exclusiveGearHpPct        Float?
   exclusiveGearLethalityPct Float?
@@ -227,6 +231,95 @@ model SvsGarrisonMember {
   participantId Int
   participant   SvsParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   createdAt     DateTime       @default(now())
+}
+
+// 集結/駐屯の戦闘レポート1件分(単騎ではなく複数参加者の大規模戦闘)
+model GarrisonBattle {
+  id         Int       @id @default(autoincrement())
+  label      String? // 例: "DWKs vs NurFace"
+  battleDate DateTime?
+  side       String // "defense"(防衛・駐屯) or "attack"(攻撃・集結)
+  result     String? // "win" / "lose"
+
+  myName        String? // 自陣営の代表プレイヤー名(例: [vBv]DWKs)
+  myAlliance    String?
+  enemyName     String?
+  enemyAlliance String?
+
+  // 兵力合計(戦闘一覧の「部隊」内訳。兵種別が不明な場合は空欄でよい)
+  myShieldCount    Int?
+  mySpearCount     Int?
+  myBowCount       Int?
+  enemyShieldCount Int?
+  enemySpearCount  Int?
+  enemyBowCount    Int?
+
+  // 追加ステータス%(自陣営、盾/槍/弓×攻撃力・防御力・殺傷力・HP)
+  myBuffShieldAtkPct       Float?
+  myBuffShieldDefPct       Float?
+  myBuffShieldLethalityPct Float?
+  myBuffShieldHpPct        Float?
+  myBuffSpearAtkPct        Float?
+  myBuffSpearDefPct        Float?
+  myBuffSpearLethalityPct  Float?
+  myBuffSpearHpPct         Float?
+  myBuffBowAtkPct          Float?
+  myBuffBowDefPct          Float?
+  myBuffBowLethalityPct    Float?
+  myBuffBowHpPct           Float?
+
+  // 追加ステータス%(相手陣営)
+  enemyBuffShieldAtkPct       Float?
+  enemyBuffShieldDefPct       Float?
+  enemyBuffShieldLethalityPct Float?
+  enemyBuffShieldHpPct        Float?
+  enemyBuffSpearAtkPct        Float?
+  enemyBuffSpearDefPct        Float?
+  enemyBuffSpearLethalityPct  Float?
+  enemyBuffSpearHpPct         Float?
+  enemyBuffBowAtkPct          Float?
+  enemyBuffBowDefPct          Float?
+  enemyBuffBowLethalityPct    Float?
+  enemyBuffBowHpPct           Float?
+
+  // 結果(戦闘一覧の実測値。シミュレーターの検証・係数調整に使う)
+  myLoss             Int?
+  myInjured          Int?
+  myLightInjured     Int?
+  mySurvivors        Int?
+  enemyLoss          Int?
+  enemyInjured       Int?
+  enemyLightInjured  Int?
+  enemySurvivors     Int?
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  participants GarrisonParticipant[]
+}
+
+// 集結/駐屯戦闘に参加した個人(自陣営・相手陣営どちらも登録可能)
+model GarrisonParticipant {
+  id               Int            @id @default(autoincrement())
+  garrisonBattleId Int
+  garrisonBattle   GarrisonBattle @relation(fields: [garrisonBattleId], references: [id], onDelete: Cascade)
+
+  side       String  @default("mine") // "mine" or "enemy"
+  playerName String
+  troopCount Int? // この参加者の兵力
+  kills      Int? // この参加者の撃墜数
+
+  // 総力最大(集結主・駐屯リーダー)ならtrue。trueの場合スキル1〜3全部、falseなら左端英雄のスキル1のみが計算に反映される仕様
+  isLeader Boolean @default(false)
+
+  shieldHeroId Int?
+  shieldHero   Hero? @relation("GarrisonShieldHero", fields: [shieldHeroId], references: [id])
+  spearHeroId  Int?
+  spearHero    Hero? @relation("GarrisonSpearHero", fields: [spearHeroId], references: [id])
+  bowHeroId    Int?
+  bowHero      Hero? @relation("GarrisonBowHero", fields: [bowHeroId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 // トップページのお知らせ掲示板(誰でも書き込み・削除可能)
