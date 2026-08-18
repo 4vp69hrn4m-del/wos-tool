@@ -364,6 +364,9 @@ export default function Home() {
         <p>
           <Link href="/simulate">→ 編成シミュレーター(簡易版)</Link>
         </p>
+        <p>
+          <Link href="/garrison">→ 集結/駐屯 戦闘データの登録(係数調整用)</Link>
+        </p>
       </div>
     </div>
   );
