@@ -301,13 +301,15 @@ function buildTroopGroups(
   return groups;
 }
 
-// 仮のダメージ式(実際の式が分かったらここだけ差し替える)
-// 1回のダメージ = 攻撃力 × (1 + 殺傷力/100) × (100 ÷ (100 + 相手の防御力))
+// 戦闘理論(YouTube解説動画より): ダメージは兵力数の平方根に比例する(集結限定)
+// 1ターンのダメージ = 攻撃力 × (1 + 殺傷力/100) × (100 ÷ (100 + 相手の防御力)) × √攻撃側人数 × 係数
+// 係数(DAMAGE_COEFFICIENT)は正確な値がまだ分からないため暫定値。実測データが増え次第調整する。
+const DAMAGE_COEFFICIENT = 0.1;
 function attackDamage(attacker: TroopGroup, defender: TroopGroup): number {
   const perSoldier =
     attacker.atkPerSoldier * (1 + attacker.lethalityPerSoldier / 100) *
     (100 / (100 + defender.defPerSoldier));
-  return perSoldier * attacker.count;
+  return perSoldier * Math.sqrt(attacker.count) * DAMAGE_COEFFICIENT;
 }
 
 // 盾→槍→弓の順で、最初に生き残っているグループを狙う
@@ -379,36 +381,33 @@ function simulateBattle(
     if (isWiped(self) || isWiped(opponent)) break;
     turn++;
 
-    // 英雄スキルによる直接キル(兵種の攻防より先に処理する)
-    const selfKills = directKillsThisTurn(selfHeroes, turn);
-    if (selfKills > 0) {
-      const target = pickTarget(opponent);
-      if (target) applyDirectKill(target, selfKills);
-    }
-    if (isWiped(opponent)) break;
+    // ①ターゲットの決定(このターン開始時点の状態で決める)
+    const selfTargetForOpponent = pickTarget(opponent); // 自分側の各攻撃が狙う相手グループ
+    const opponentTargetForSelf = pickTarget(self); // 相手側の各攻撃が狙う自分グループ
 
-    const opponentKills = directKillsThisTurn(opponentHeroes, turn);
-    if (opponentKills > 0) {
-      const target = pickTarget(self);
-      if (target) applyDirectKill(target, opponentKills);
-    }
-    if (isWiped(self)) break;
-
+    // ③ダメージ計算(このターン開始時点の攻撃力・防御力を使って、まだ反映せずに計算だけ行う)
+    const pendingDamage: { target: TroopGroup; amount: number }[] = [];
     for (const t of troopOrder) {
       const attacker = self.find((g) => g.type === t);
-      if (attacker && attacker.count > 0) {
-        const target = pickTarget(opponent);
-        if (target) applyDamage(target, attackDamage(attacker, target));
+      if (attacker && attacker.count > 0 && selfTargetForOpponent) {
+        pendingDamage.push({ target: selfTargetForOpponent, amount: attackDamage(attacker, selfTargetForOpponent) });
       }
-      if (isWiped(opponent)) break;
-
       const opponentAttacker = opponent.find((g) => g.type === t);
-      if (opponentAttacker && opponentAttacker.count > 0) {
-        const target = pickTarget(self);
-        if (target) applyDamage(target, attackDamage(opponentAttacker, target));
+      if (opponentAttacker && opponentAttacker.count > 0 && opponentTargetForSelf) {
+        pendingDamage.push({ target: opponentTargetForSelf, amount: attackDamage(opponentAttacker, opponentTargetForSelf) });
       }
-      if (isWiped(self)) break;
     }
+
+    // 英雄スキルの直接キルも、このターン内で計算だけ行っておく(反映は下の一括処理でまとめて行う)
+    const selfKills = directKillsThisTurn(selfHeroes, turn);
+    const opponentKills = directKillsThisTurn(opponentHeroes, turn);
+    const pendingKills: { target: TroopGroup; count: number }[] = [];
+    if (selfKills > 0 && selfTargetForOpponent) pendingKills.push({ target: selfTargetForOpponent, count: selfKills });
+    if (opponentKills > 0 && opponentTargetForSelf) pendingKills.push({ target: opponentTargetForSelf, count: opponentKills });
+
+    // ④処理を一括反映(味方・相手すべての計算結果を、順番を気にせずまとめて適用する)
+    for (const { target, amount } of pendingDamage) applyDamage(target, amount);
+    for (const { target, count } of pendingKills) applyDirectKill(target, count);
   }
 
   const selfAlive = !isWiped(self);
@@ -550,7 +549,7 @@ export default function SimulatePage() {
         <div className="card">
           <h2 style={{ marginTop: 0 }}>ターン制戦闘シミュレーション(β)</h2>
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            両編成に兵士数・兵種割合(歩兵%/騎兵%/弓兵%)が登録されている必要があります。ダメージ式は仮のものです(攻撃力×(1+殺傷力/100)×100÷(100+相手の防御力))。
+            両編成に兵士数・兵種割合(歩兵%/騎兵%/弓兵%)が登録されている必要があります。ダメージ式は「攻撃力×(1+殺傷力/100)×100÷(100+相手の防御力)×√攻撃側人数×係数」です(YouTube解説動画を参考に、兵力は平方根で効く形に変更。係数はまだ暫定値で今後調整予定)。処理は盾→槍→弓の順でターゲットを決めた後、味方・相手全員分をまとめて一括反映します。
           </p>
           <button onClick={runBattle}>シミュレーション実行</button>
 
