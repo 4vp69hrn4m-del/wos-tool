@@ -216,6 +216,7 @@ model SvsParticipant {
   t12ShieldSkill Int? // 盾兵スキルレベル 0〜3
   t12SpearSkill  Int? // 槍兵スキルレベル 0〜3
   t12BowSkill    Int? // 弓兵スキルレベル 0〜3
+  power          Int? // 霜竜開催回用: 自分の総力数値
   noSleepRisk    Boolean  @default(false) // 寝落ちは考慮しないものとする
   createdAt      DateTime @default(now())
 
