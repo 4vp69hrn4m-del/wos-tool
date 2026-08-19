@@ -225,12 +225,22 @@ function heroFinalStat(
 }
 
 type TroopType = "shield" | "spear" | "bow";
-// T12(煌耀)兵種の基礎ステータス(実測値)。T11以下は誰も使っていない前提のため、T12基礎値のみを採用する。
+// T12(煌耀)兵種の基礎ステータス(実測値、兵舎の火晶レベルFC10時点の値)。T11以下は誰も使っていない前提のため、T12基礎値のみを採用する。
+// FCは全員10(最大)固定のため、FC10到達で恒常的に乗る兵舎スキルの基礎ステータス分は最初から織り込んでいる:
+// 盾兵は光鍛ボディで防御力+6%、弓兵はフレイムバーストで攻撃力+6%。
 const TROOP_BASE_STATS: Record<TroopType, Stats> = {
-  shield: { atk: 22, def: 31, hp: 30, lethality: 21 },
+  shield: { atk: 22, def: 31 * 1.06, hp: 30, lethality: 21 },
   spear: { atk: 31, def: 24, hp: 23, lethality: 29 },
-  bow: { atk: 33, def: 24, hp: 23, lethality: 30 },
+  bow: { atk: 33 * 1.06, def: 24, hp: 23, lethality: 30 },
 };
+
+// 兵舎スキル(FC10固定前提)の確率発動効果を、期待値のダメージ倍率としてまとめたもの。
+// 盾兵: 烈晶の盾(37.5%で36%ダメージ相殺)+光鍛ボディの追加相殺(発動中+15%) → 被ダメージの期待値倍率
+// 槍兵: 炎晶の戦矛(15%で2倍ダメージ) → 与ダメージの期待値倍率
+// 弓兵: 燃晶の火薬(30%で+50%ダメージ) → 与ダメージの期待値倍率
+const BARRACKS_SHIELD_DAMAGE_TAKEN_MULT = 1 - 0.375 * (1 - (1 - 0.36) * (1 - 0.15)); // ≒0.829
+const BARRACKS_SPEAR_DAMAGE_DEALT_MULT = 1 + 0.15 * (2 - 1); // = 1.15
+const BARRACKS_BOW_DAMAGE_DEALT_MULT = 1 + 0.3 * 0.5; // = 1.15
 
 function troopBuffField(type: TroopType, stat: StatKey): keyof Formation {
   const troopCap = type === "shield" ? "Shield" : type === "spear" ? "Spear" : "Bow";
@@ -309,7 +319,14 @@ function attackDamage(attacker: TroopGroup, defender: TroopGroup): number {
   const perSoldier =
     attacker.atkPerSoldier * (1 + attacker.lethalityPerSoldier / 100) *
     (100 / (100 + defender.defPerSoldier));
-  return perSoldier * Math.sqrt(attacker.count) * DAMAGE_COEFFICIENT;
+  let damage = perSoldier * Math.sqrt(attacker.count) * DAMAGE_COEFFICIENT;
+
+  // 兵舎スキル(FC10固定前提)の確率発動効果を期待値で反映
+  if (attacker.type === "spear") damage *= BARRACKS_SPEAR_DAMAGE_DEALT_MULT;
+  if (attacker.type === "bow") damage *= BARRACKS_BOW_DAMAGE_DEALT_MULT;
+  if (defender.type === "shield") damage *= BARRACKS_SHIELD_DAMAGE_TAKEN_MULT;
+
+  return damage;
 }
 
 // 盾→槍→弓の順で、最初に生き残っているグループを狙う
@@ -549,7 +566,7 @@ export default function SimulatePage() {
         <div className="card">
           <h2 style={{ marginTop: 0 }}>ターン制戦闘シミュレーション(β)</h2>
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
-            両編成に兵士数・兵種割合(歩兵%/騎兵%/弓兵%)が登録されている必要があります。ダメージ式は「攻撃力×(1+殺傷力/100)×100÷(100+相手の防御力)×√攻撃側人数×係数」です(YouTube解説動画を参考に、兵力は平方根で効く形に変更。係数はまだ暫定値で今後調整予定)。処理は盾→槍→弓の順でターゲットを決めた後、味方・相手全員分をまとめて一括反映します。
+            両編成に兵士数・兵種割合(歩兵%/騎兵%/弓兵%)が登録されている必要があります。ダメージ式は「攻撃力×(1+殺傷力/100)×100÷(100+相手の防御力)×√攻撃側人数×係数」です(YouTube解説動画を参考に、兵力は平方根で効く形に変更。係数はまだ暫定値で今後調整予定)。処理は盾→槍→弓の順でターゲットを決めた後、味方・相手全員分をまとめて一括反映します。兵舎の火晶レベル(FC)は全員10(最大)固定として、兵種の基礎ステータス(盾兵の防御力+6%・弓兵の攻撃力+6%)と、確率発動する兵舎スキル(盾兵の被ダメ軽減・槍兵の会心・弓兵の追加ダメージ)の期待値も織り込み済みです。
           </p>
           <button onClick={runBattle}>シミュレーション実行</button>
 
