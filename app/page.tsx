@@ -178,7 +178,7 @@ export default function Home() {
       <div className="card">
         <h2 style={{ marginTop: 0 }}>SVS用</h2>
         <p>
-          <Link href="/svs">→ SVS開催回・時間帯の管理</Link>
+          <Link href="/svs">→ SVS、霜竜開催回・時間帯の管理</Link>
         </p>
         <p>
           <Link href="/timer">→ 王城着弾時刻計算</Link>
