@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const round = await prisma.svsRound.create({
     data: {
       roundName: body.roundName,
+      eventType: body.eventType || "SVS",
       eventDate: body.eventDate ? new Date(body.eventDate) : null,
       opponent: body.opponent || null,
       status: body.status || null,
