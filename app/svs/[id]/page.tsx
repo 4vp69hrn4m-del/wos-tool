@@ -30,12 +30,14 @@ type Participant = {
 type SvsRound = {
   id: number;
   roundName: string;
+  eventType: string;
   eventDate: string | null;
   opponent: string | null;
   status: string | null;
   result: string | null;
   timeSlots: TimeSlot[];
   participants: Participant[];
+  rankings: { id: number; playerName: string; rank: number | null }[];
 };
 
 const presetLabels = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
@@ -83,6 +85,9 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   const [statusDraft, setStatusDraft] = useState("編成準備中");
   const [resultDraft, setResultDraft] = useState("");
+  const [rankingDrafts, setRankingDrafts] = useState<{ name: string; rank: string }[]>(
+    Array.from({ length: 5 }, () => ({ name: "", rank: "" }))
+  );
 
   async function load() {
     const data = await fetch(`/api/svs-rounds/${params.id}`).then((r) => r.json());
@@ -252,6 +257,42 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: statusDraft, result: resultDraft }),
     });
+    if (!res) return;
+    await load();
+  }
+
+  function updateRankingDraft(index: number, key: "name" | "rank", value: string) {
+    setRankingDrafts((drafts) => {
+      const next = [...drafts];
+      next[index] = { ...next[index], [key]: value };
+      return next;
+    });
+  }
+
+  async function saveRanking(index: number) {
+    const draft = rankingDrafts[index];
+    if (!draft.name.trim()) return;
+    const res = await adminFetch("/api/svs-rankings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        svsRoundId: params.id,
+        playerName: draft.name,
+        rank: draft.rank,
+      }),
+    });
+    if (!res) return;
+    setRankingDrafts((drafts) => {
+      const next = [...drafts];
+      next[index] = { name: "", rank: "" };
+      return next;
+    });
+    await load();
+  }
+
+  async function deleteRanking(id: number, name: string) {
+    if (!confirm(`「${name}」のランキング登録を削除しますか?`)) return;
+    const res = await adminFetch(`/api/svs-rankings/${id}`, { method: "DELETE" });
     if (!res) return;
     await load();
   }
@@ -1036,7 +1077,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
       })}
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>状態・勝敗</h2>
+        <h2 style={{ marginTop: 0 }}>状態・{round.eventType === "霜竜" ? "個人ランキング" : "勝敗"}</h2>
         <label>状態</label>
         <select value={statusDraft} onChange={(e) => setStatusDraft(e.target.value)}>
           <option value="編成準備中">編成準備中</option>
@@ -1045,14 +1086,77 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
           <option value="終了">終了</option>
         </select>
 
-        <label>勝敗</label>
-        <select value={resultDraft} onChange={(e) => setResultDraft(e.target.value)}>
-          <option value="">未定</option>
-          <option value="win">勝ち</option>
-          <option value="lose">負け</option>
-        </select>
+        {round.eventType === "霜竜" ? (
+          <>
+            {round.rankings.length > 0 && (
+              <div style={{ marginTop: 16 }}>
+                {[...round.rankings]
+                  .sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
+                  .map((r) => (
+                    <div
+                      key={r.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "6px 0",
+                        borderBottom: "1px solid var(--border)",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      <div>
+                        {r.rank ? `${r.rank}位` : "順位未設定"} - {r.playerName}
+                      </div>
+                      <button
+                        onClick={() => deleteRanking(r.id, r.playerName)}
+                        style={{
+                          marginTop: 0,
+                          padding: "4px 10px",
+                          fontSize: "0.8rem",
+                          background: "#7f1d1d",
+                          color: "#fecaca",
+                          flexShrink: 0,
+                        }}
+                      >
+                        削除
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
 
-        <button onClick={saveStatusAndResult}>状態・勝敗を保存</button>
+            <label style={{ marginTop: 16 }}>ランキングを追加</label>
+            {rankingDrafts.map((draft, i) => (
+              <div className="row" key={i} style={{ marginTop: 6 }}>
+                <input
+                  placeholder="名前"
+                  value={draft.name}
+                  onChange={(e) => updateRankingDraft(i, "name", e.target.value)}
+                />
+                <input
+                  placeholder="何位"
+                  value={draft.rank}
+                  onChange={(e) => updateRankingDraft(i, "rank", e.target.value)}
+                  style={{ maxWidth: 80 }}
+                />
+                <button onClick={() => saveRanking(i)} style={{ marginTop: 0 }}>
+                  追加
+                </button>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <label>勝敗</label>
+            <select value={resultDraft} onChange={(e) => setResultDraft(e.target.value)}>
+              <option value="">未定</option>
+              <option value="win">勝ち</option>
+              <option value="lose">負け</option>
+            </select>
+          </>
+        )}
+
+        <button onClick={saveStatusAndResult}>状態{round.eventType === "霜竜" ? "" : "・勝敗"}を保存</button>
       </div>
     </div>
   );
