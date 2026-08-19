@@ -143,7 +143,7 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         t12ShieldSkill: hasT12 ? t12ShieldSkill : "",
         t12SpearSkill: hasT12 ? t12SpearSkill : "",
         t12BowSkill: hasT12 ? t12BowSkill : "",
-        power: round.eventType === "霜竜" ? power : "",
+        power: round?.eventType === "霜竜" ? power : "",
         noSleepRisk,
         timeSlotIds: selectedSlotIds,
       }),
