@@ -41,6 +41,7 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
   if (body.roundName !== undefined) data.roundName = body.roundName;
+  if (body.eventType !== undefined) data.eventType = body.eventType;
   if (body.eventDate !== undefined) {
     data.eventDate = body.eventDate ? new Date(body.eventDate) : null;
   }
