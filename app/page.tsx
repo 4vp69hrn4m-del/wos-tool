@@ -26,14 +26,17 @@ type Participant = {
   t12ShieldSkill: number | null;
   t12SpearSkill: number | null;
   t12BowSkill: number | null;
+  power: number | null;
   timeSlots: ParticipantSlot[];
 };
 type SvsRound = {
   id: number;
   roundName: string;
+  eventType: string;
   status: string | null;
   timeSlots: TimeSlot[];
   participants: Participant[];
+  rankings: { id: number; playerName: string; rank: number | null }[];
 };
 
 const presetOrder = ["21:00〜23:00", "23:00〜01:00", "01:00〜02:00"];
@@ -80,10 +83,12 @@ function ParticipantLine({
   p,
   garrisonLeaderUsePet,
   rallyLeader,
+  eventType,
 }: {
   p: Participant;
   garrisonLeaderUsePet?: boolean | null;
   rallyLeader?: RallyLeader | null;
+  eventType?: string;
 }) {
   return (
     <div
@@ -125,7 +130,9 @@ function ParticipantLine({
         rallyLeader
       ) && (
         <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-          {p.hasT12
+          {eventType === "霜竜"
+            ? `総力${(p.power ?? 0).toLocaleString()}`
+            : p.hasT12
             ? `${p.t12ShieldSkill ?? "-"}/${p.t12SpearSkill ?? "-"}/${
                 p.t12BowSkill ?? "-"
               }`
@@ -222,6 +229,18 @@ export default function Home() {
               削除
             </button>
           </h1>
+          {latestRound.eventType === "霜竜" && latestRound.rankings.length > 0 && (
+            <div className="card">
+              <h2 style={{ marginTop: 0, fontSize: "1rem" }}>個人ランキング</h2>
+              {[...latestRound.rankings]
+                .sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
+                .map((r) => (
+                  <div key={r.id} style={{ fontSize: "0.9rem", marginTop: 4 }}>
+                    {r.rank ? `${r.rank}位` : "順位未設定"} - {r.playerName}
+                  </div>
+                ))}
+            </div>
+          )}
           <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>
             ↓駐屯メンバー(Garrison Members) ・ 🐱がついている人はペットを使用してください
           </p>
@@ -295,6 +314,7 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
+                            eventType={latestRound.eventType}
                             garrisonLeaderUsePet={
                               p.id === t.garrisonLeaderVbvId ? t.garrisonLeaderVbvUsePet : null
                             }
@@ -322,6 +342,7 @@ export default function Home() {
                           <ParticipantLine
                             p={p}
                             key={p.id}
+                            eventType={latestRound.eventType}
                             garrisonLeaderUsePet={
                               p.id === t.garrisonLeaderCbsId ? t.garrisonLeaderCbsUsePet : null
                             }
@@ -341,6 +362,7 @@ export default function Home() {
                         <ParticipantLine
                           p={p}
                           key={p.id}
+                          eventType={latestRound.eventType}
                           rallyLeader={rallyLeaderOf(p.id)}
                         />
                       ))}
