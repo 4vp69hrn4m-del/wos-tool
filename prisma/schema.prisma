@@ -152,6 +152,7 @@ model Formation {
 model SvsRound {
   id        Int      @id @default(autoincrement())
   roundName String   // 例: "SVS 2608"
+  eventType String   @default("SVS") // "SVS" or "霜竜"
   eventDate DateTime?
   opponent  String?  // 未定の場合は空欄
   status    String?  // 例: "編成準備中" など自由入力
