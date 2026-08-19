@@ -161,6 +161,17 @@ model SvsRound {
 
   timeSlots    SvsTimeSlot[]
   participants SvsParticipant[]
+  rankings     SvsRanking[]
+}
+
+// 霜竜開催回の個人ランキング(名前+順位のペアを複数登録)
+model SvsRanking {
+  id         Int      @id @default(autoincrement())
+  svsRoundId Int
+  svsRound   SvsRound @relation(fields: [svsRoundId], references: [id], onDelete: Cascade)
+  playerName String
+  rank       Int?
+  createdAt  DateTime @default(now())
 }
 
 // SVS開催回の中の時間帯(例: 21:00〜23:00)
