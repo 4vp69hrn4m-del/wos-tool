@@ -34,6 +34,7 @@ export async function POST(
     t12ShieldSkill: toInt(body.t12ShieldSkill),
     t12SpearSkill: toInt(body.t12SpearSkill),
     t12BowSkill: toInt(body.t12BowSkill),
+    power: toInt(body.power),
     noSleepRisk: !!body.noSleepRisk,
   };
 
