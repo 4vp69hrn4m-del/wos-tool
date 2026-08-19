@@ -21,6 +21,7 @@ export async function GET(
       participants: {
         include: { timeSlots: { include: { timeSlot: true } } },
       },
+      rankings: { orderBy: { rank: "asc" } },
     },
   });
   if (!round) {
