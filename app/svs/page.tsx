@@ -8,6 +8,7 @@ type TimeSlot = { id: number; label: string };
 type SvsRound = {
   id: number;
   roundName: string;
+  eventType: string;
   eventDate: string | null;
   opponent: string | null;
   status: string | null;
@@ -18,6 +19,7 @@ type SvsRound = {
 export default function SvsListPage() {
   const [rounds, setRounds] = useState<SvsRound[]>([]);
   const [roundName, setRoundName] = useState("");
+  const [eventType, setEventType] = useState("SVS");
   const [eventDate, setEventDate] = useState("");
   const [opponent, setOpponent] = useState("");
   const [status, setStatus] = useState("編成準備中");
@@ -36,10 +38,11 @@ export default function SvsListPage() {
     const res = await adminFetch("/api/svs-rounds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roundName, eventDate, opponent, status }),
+      body: JSON.stringify({ roundName, eventType, eventDate, opponent, status }),
     });
     if (!res) return;
     setRoundName("");
+    setEventType("SVS");
     setEventDate("");
     setOpponent("");
     setStatus("編成準備中");
@@ -61,6 +64,12 @@ export default function SvsListPage() {
         <h2 style={{ marginTop: 0 }}>新しい開催回を追加</h2>
         <label>開催回の名前(例: SVS 350)</label>
         <input value={roundName} onChange={(e) => setRoundName(e.target.value)} />
+
+        <label>種別</label>
+        <select value={eventType} onChange={(e) => setEventType(e.target.value)}>
+          <option value="SVS">SVS</option>
+          <option value="霜竜">霜竜</option>
+        </select>
 
         <label>開催日</label>
         <input
@@ -92,7 +101,19 @@ export default function SvsListPage() {
           style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}
         >
           <div>
-            <strong>{r.roundName}</strong>
+            <strong>{r.roundName}</strong>{" "}
+            <span
+              style={{
+                fontSize: "0.7rem",
+                fontWeight: 700,
+                padding: "2px 8px",
+                borderRadius: 999,
+                color: r.eventType === "霜竜" ? "#a5f3fc" : "#38bdf8",
+                border: `1px solid ${r.eventType === "霜竜" ? "#a5f3fc" : "#38bdf8"}`,
+              }}
+            >
+              {r.eventType}
+            </span>
             <div>
               開催日: {r.eventDate ? r.eventDate.slice(0, 10) : "未定"} / 対戦相手:{" "}
               {r.opponent || "未定"}
