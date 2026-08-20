@@ -591,6 +591,24 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             }}
                           >
                             {p.playerName}
+                            <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                              {" "}
+                              (
+                              {round.eventType === "霜竜"
+                                ? `総力${(p.power ?? 0).toLocaleString()} / ${
+                                    p.hasT12
+                                      ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                          p.t12SpearSkill ?? "-"
+                                        }/弓${p.t12BowSkill ?? "-"}`
+                                      : "T12なし"
+                                  }`
+                                : p.hasT12
+                                ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                                    p.t12BowSkill ?? "-"
+                                  }`
+                                : "T12なし"}
+                              )
+                            </span>
                           </span>
                           {rl && (
                             <span
@@ -660,6 +678,24 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                             }}
                           >
                             {p.playerName}
+                            <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                              {" "}
+                              (
+                              {round.eventType === "霜竜"
+                                ? `総力${(p.power ?? 0).toLocaleString()} / ${
+                                    p.hasT12
+                                      ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                          p.t12SpearSkill ?? "-"
+                                        }/弓${p.t12BowSkill ?? "-"}`
+                                      : "T12なし"
+                                  }`
+                                : p.hasT12
+                                ? `盾${p.t12ShieldSkill ?? "-"}/槍${p.t12SpearSkill ?? "-"}/弓${
+                                    p.t12BowSkill ?? "-"
+                                  }`
+                                : "T12なし"}
+                              )
+                            </span>
                           </span>
                           {rl && (
                             <span
@@ -692,243 +728,243 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
             {round.eventType !== "霜竜" && (
               <>
-                <div className="row">
-                  <div>
-                    <label>駐屯(vbv・1人)</label>
-                    <select
-                      value={draft.garrisonLeaderVbvId}
-                      onChange={(e) => updateDraft(t.id, { garrisonLeaderVbvId: e.target.value })}
-                    >
-                      <option value="">(未選択)</option>
-                      {inSlot
-                        .filter((p) => p.alliance === "vbv")
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.playerName}
-                          </option>
-                        ))}
-                    </select>
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                      <input
-                        type="checkbox"
-                        checked={draft.garrisonLeaderVbvUsePet}
-                        onChange={(e) =>
-                          updateDraft(t.id, { garrisonLeaderVbvUsePet: e.target.checked })
-                        }
-                        style={{ width: "auto" }}
-                      />
-                      ペット使用
-                    </label>
-                  </div>
-                  <div>
-                    <label>駐屯(cbs・1人)</label>
-                    <select
-                      value={draft.garrisonLeaderCbsId}
-                      onChange={(e) => updateDraft(t.id, { garrisonLeaderCbsId: e.target.value })}
-                    >
-                      <option value="">(未選択)</option>
-                      {inSlot
-                        .filter((p) => p.alliance === "cbs")
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.playerName}
-                          </option>
-                        ))}
-                    </select>
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
-                      <input
-                        type="checkbox"
-                        checked={draft.garrisonLeaderCbsUsePet}
-                        onChange={(e) =>
-                          updateDraft(t.id, { garrisonLeaderCbsUsePet: e.target.checked })
-                        }
-                        style={{ width: "auto" }}
-                      />
-                      ペット使用
-                    </label>
-                  </div>
-                </div>
+            <div className="row">
+              <div>
+                <label>駐屯(vbv・1人)</label>
+                <select
+                  value={draft.garrisonLeaderVbvId}
+                  onChange={(e) => updateDraft(t.id, { garrisonLeaderVbvId: e.target.value })}
+                >
+                  <option value="">(未選択)</option>
+                  {inSlot
+                    .filter((p) => p.alliance === "vbv")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.playerName}
+                      </option>
+                    ))}
+                </select>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.garrisonLeaderVbvUsePet}
+                    onChange={(e) =>
+                      updateDraft(t.id, { garrisonLeaderVbvUsePet: e.target.checked })
+                    }
+                    style={{ width: "auto" }}
+                  />
+                  ペット使用
+                </label>
+              </div>
+              <div>
+                <label>駐屯(cbs・1人)</label>
+                <select
+                  value={draft.garrisonLeaderCbsId}
+                  onChange={(e) => updateDraft(t.id, { garrisonLeaderCbsId: e.target.value })}
+                >
+                  <option value="">(未選択)</option>
+                  {inSlot
+                    .filter((p) => p.alliance === "cbs")
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.playerName}
+                      </option>
+                    ))}
+                </select>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={draft.garrisonLeaderCbsUsePet}
+                    onChange={(e) =>
+                      updateDraft(t.id, { garrisonLeaderCbsUsePet: e.target.checked })
+                    }
+                    style={{ width: "auto" }}
+                  />
+                  ペット使用
+                </label>
+              </div>
+            </div>
 
-                <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
-                  {round.eventType === "霜竜"
-                    ? "駐屯メンバー選択(参加者から選択)"
-                    : "駐屯メンバー選択(vbv・cbsそれぞれ最大12人、合計上限は24)"}
-                </p>
-                {round.eventType === "霜竜" ? (
-                  <div
-                    style={{
-                      maxHeight: 260,
-                      overflowY: "auto",
-                      border: "1px solid #334155",
-                      borderRadius: 8,
-                      padding: "4px 8px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        columnGap: 12,
-                      }}
-                    >
-                      {inSlot
-                        .slice()
-                        .sort((a, b) => (b.power ?? 0) - (a.power ?? 0))
-                        .map((p) => (
-                          <label
-                            key={p.id}
-                            style={{ display: "flex", alignItems: "center", gap: 6 }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={draft.garrisonMemberIds.includes(p.id)}
-                              onChange={() => toggleGarrisonMember(t.id, p)}
-                              style={{ width: "auto" }}
-                            />
-                            <span style={{ fontSize: "0.9rem" }}>
-                              {p.playerName}
-                              <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                                {" "}
-                                ({p.alliance || "未設定"} / 総力{(p.power ?? 0).toLocaleString()})
+            <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 16, marginBottom: 4 }}>
+              {round.eventType === "霜竜"
+                ? "駐屯メンバー選択(参加者から選択)"
+                : "駐屯メンバー選択(vbv・cbsそれぞれ最大12人、合計上限は24)"}
+            </p>
+            {round.eventType === "霜竜" ? (
+              <div
+                style={{
+                  maxHeight: 260,
+                  overflowY: "auto",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  padding: "4px 8px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    columnGap: 12,
+                  }}
+                >
+                  {inSlot
+                    .slice()
+                    .sort((a, b) => (b.power ?? 0) - (a.power ?? 0))
+                    .map((p) => (
+                      <label
+                        key={p.id}
+                        style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={draft.garrisonMemberIds.includes(p.id)}
+                          onChange={() => toggleGarrisonMember(t.id, p)}
+                          style={{ width: "auto" }}
+                        />
+                        <span style={{ fontSize: "0.9rem" }}>
+                          {p.playerName}
+                          <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                            {" "}
+                            ({p.alliance || "未設定"} / 総力{(p.power ?? 0).toLocaleString()})
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {(["vbv", "cbs"] as const).map((allianceKey) => {
+                  const members = inSlot
+                    .filter((p) => p.alliance === allianceKey)
+                    .sort((a, b) => totalSkill(b) - totalSkill(a));
+                  if (members.length === 0) return null;
+                  const selectedCount = draft.garrisonMemberIds.filter((id) =>
+                    members.some((m) => m.id === id)
+                  ).length;
+                  return (
+                    <div key={allianceKey} style={{ marginBottom: 8 }}>
+                      <div
+                        style={{
+                          color: "#38bdf8",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          marginTop: 8,
+                        }}
+                      >
+                        {allianceKey}({selectedCount}/12人)
+                      </div>
+                      <div
+                        style={{
+                          maxHeight: 200,
+                          overflowY: "auto",
+                          border: "1px solid #334155",
+                          borderRadius: 8,
+                          padding: "4px 8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            columnGap: 12,
+                          }}
+                        >
+                          {members.map((p) => (
+                            <label
+                              key={p.id}
+                              style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={draft.garrisonMemberIds.includes(p.id)}
+                                onChange={() => toggleGarrisonMember(t.id, p)}
+                                style={{ width: "auto" }}
+                              />
+                              <span style={{ fontSize: "0.9rem" }}>
+                                {p.playerName}
+                                <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                                  (
+                                  {p.hasT12
+                                    ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                        p.t12SpearSkill ?? "-"
+                                      }/弓${p.t12BowSkill ?? "-"}`
+                                    : "T12なし"}
+                                  )
+                                </span>
                               </span>
-                            </span>
-                          </label>
-                        ))}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    {(["vbv", "cbs"] as const).map((allianceKey) => {
-                      const members = inSlot
-                        .filter((p) => p.alliance === allianceKey)
-                        .sort((a, b) => totalSkill(b) - totalSkill(a));
-                      if (members.length === 0) return null;
-                      const selectedCount = draft.garrisonMemberIds.filter((id) =>
-                        members.some((m) => m.id === id)
-                      ).length;
-                      return (
-                        <div key={allianceKey} style={{ marginBottom: 8 }}>
-                          <div
-                            style={{
-                              color: "#38bdf8",
-                              fontSize: "0.8rem",
-                              fontWeight: 600,
-                              marginTop: 8,
-                            }}
-                          >
-                            {allianceKey}({selectedCount}/12人)
-                          </div>
-                          <div
-                            style={{
-                              maxHeight: 200,
-                              overflowY: "auto",
-                              border: "1px solid #334155",
-                              borderRadius: 8,
-                              padding: "4px 8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                columnGap: 12,
-                              }}
+                  );
+                })}
+                {(() => {
+                  const unset = inSlot
+                    .filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs")
+                    .sort((a, b) => totalSkill(b) - totalSkill(a));
+                  if (unset.length === 0) return null;
+                  return (
+                    <div style={{ marginBottom: 8 }}>
+                      <div
+                        style={{
+                          color: "#94a3b8",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          marginTop: 8,
+                        }}
+                      >
+                        未設定
+                      </div>
+                      <div
+                        style={{
+                          maxHeight: 200,
+                          overflowY: "auto",
+                          border: "1px solid #334155",
+                          borderRadius: 8,
+                          padding: "4px 8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            columnGap: 12,
+                          }}
+                        >
+                          {unset.map((p) => (
+                            <label
+                              key={p.id}
+                              style={{ display: "flex", alignItems: "center", gap: 6 }}
                             >
-                              {members.map((p) => (
-                                <label
-                                  key={p.id}
-                                  style={{ display: "flex", alignItems: "center", gap: 6 }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={draft.garrisonMemberIds.includes(p.id)}
-                                    onChange={() => toggleGarrisonMember(t.id, p)}
-                                    style={{ width: "auto" }}
-                                  />
-                                  <span style={{ fontSize: "0.9rem" }}>
-                                    {p.playerName}
-                                    <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                                      (
-                                      {p.hasT12
-                                        ? `盾${p.t12ShieldSkill ?? "-"}/槍${
-                                            p.t12SpearSkill ?? "-"
-                                          }/弓${p.t12BowSkill ?? "-"}`
-                                        : "T12なし"}
-                                      )
-                                    </span>
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
+                              <input
+                                type="checkbox"
+                                checked={draft.garrisonMemberIds.includes(p.id)}
+                                onChange={() => toggleGarrisonMember(t.id, p)}
+                                style={{ width: "auto" }}
+                              />
+                              <span style={{ fontSize: "0.9rem" }}>
+                                {p.playerName}
+                                <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
+                                  (
+                                  {p.hasT12
+                                    ? `盾${p.t12ShieldSkill ?? "-"}/槍${
+                                        p.t12SpearSkill ?? "-"
+                                      }/弓${p.t12BowSkill ?? "-"}`
+                                    : "T12なし"}
+                                  )
+                                </span>
+                              </span>
+                            </label>
+                          ))}
                         </div>
-                      );
-                    })}
-                    {(() => {
-                      const unset = inSlot
-                        .filter((p) => p.alliance !== "vbv" && p.alliance !== "cbs")
-                        .sort((a, b) => totalSkill(b) - totalSkill(a));
-                      if (unset.length === 0) return null;
-                      return (
-                        <div style={{ marginBottom: 8 }}>
-                          <div
-                            style={{
-                              color: "#94a3b8",
-                              fontSize: "0.8rem",
-                              fontWeight: 600,
-                              marginTop: 8,
-                            }}
-                          >
-                            未設定
-                          </div>
-                          <div
-                            style={{
-                              maxHeight: 200,
-                              overflowY: "auto",
-                              border: "1px solid #334155",
-                              borderRadius: 8,
-                              padding: "4px 8px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 1fr",
-                                columnGap: 12,
-                              }}
-                            >
-                              {unset.map((p) => (
-                                <label
-                                  key={p.id}
-                                  style={{ display: "flex", alignItems: "center", gap: 6 }}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={draft.garrisonMemberIds.includes(p.id)}
-                                    onChange={() => toggleGarrisonMember(t.id, p)}
-                                    style={{ width: "auto" }}
-                                  />
-                                  <span style={{ fontSize: "0.9rem" }}>
-                                    {p.playerName}
-                                    <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>
-                                      (
-                                      {p.hasT12
-                                        ? `盾${p.t12ShieldSkill ?? "-"}/槍${
-                                            p.t12SpearSkill ?? "-"
-                                          }/弓${p.t12BowSkill ?? "-"}`
-                                        : "T12なし"}
-                                      )
-                                    </span>
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </>
-                )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
               </>
             )}
 
@@ -1168,18 +1204,44 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
                               }`}
                         </div>
                       </div>
-                      <button
-                        onClick={() => deleteParticipant(p.id, p.playerName)}
-                        style={{
-                          padding: "4px 10px",
-                          fontSize: "0.8rem",
-                          background: "#7f1d1d",
-                          color: "#fecaca",
-                          flexShrink: 0,
-                        }}
-                      >
-                        削除
-                      </button>
+                      <span style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                        <button
+                          onClick={() => moveAlliance(p.id, "vbv")}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "0.8rem",
+                            background: "transparent",
+                            color: "#94a3b8",
+                            border: "1px solid #334155",
+                          }}
+                        >
+                          → vbv
+                        </button>
+                        <button
+                          onClick={() => moveAlliance(p.id, "cbs")}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "0.8rem",
+                            background: "transparent",
+                            color: "#94a3b8",
+                            border: "1px solid #334155",
+                          }}
+                        >
+                          → cbs
+                        </button>
+                        <button
+                          onClick={() => deleteParticipant(p.id, p.playerName)}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "0.8rem",
+                            background: "#7f1d1d",
+                            color: "#fecaca",
+                            flexShrink: 0,
+                          }}
+                        >
+                          削除
+                        </button>
+                      </span>
                     </div>
                   ))}
               </div>
