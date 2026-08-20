@@ -59,6 +59,15 @@ function totalSkill(p: Participant) {
   return (p.t12ShieldSkill ?? 0) + (p.t12SpearSkill ?? 0) + (p.t12BowSkill ?? 0);
 }
 
+// 総力の入力を検証する。数字のみ・6桁以上を必須とする(「1.2B」「900M」のような省略記法は不可)。
+const POWER_MIN_DIGITS = 6;
+function validatePower(input: string): number | null {
+  const s = input.trim();
+  if (!/^[0-9]+$/.test(s)) return null;
+  if (s.length < POWER_MIN_DIGITS) return null;
+  return Number(s);
+}
+
 type LeaderDraft = {
   rallyLeaders: { participantId: number; usePet: boolean }[];
   garrisonLeaderVbvId: string;
@@ -132,18 +141,30 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
   async function addParticipant() {
     if (!playerName.trim()) return;
+
+    let parsedPower: number | null = null;
+    if (round?.eventType === "霜竜" && power.trim()) {
+      parsedPower = validatePower(power);
+      if (parsedPower === null) {
+        alert(
+          `総力は数字のみ・${POWER_MIN_DIGITS}桁以上で入力してください(例: 900000000)。「900M」「1.2B」のような省略記法は使えません。`
+        );
+        return;
+      }
+    }
+
     await fetch(`/api/svs-rounds/${params.id}/participants`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         playerName,
         homeAlliance,
-        alliance,
+        alliance: round?.eventType === "霜竜" ? "" : alliance,
         hasT12,
         t12ShieldSkill: hasT12 ? t12ShieldSkill : "",
         t12SpearSkill: hasT12 ? t12SpearSkill : "",
         t12BowSkill: hasT12 ? t12BowSkill : "",
-        power: round?.eventType === "霜竜" ? power : "",
+        power: parsedPower !== null ? String(parsedPower) : "",
         noSleepRisk,
         timeSlotIds: selectedSlotIds,
       }),
@@ -326,13 +347,17 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
         <label>所属同盟(実際に入っている同盟名) / Home Alliance (your real alliance)</label>
         <input value={homeAlliance} onChange={(e) => setHomeAlliance(e.target.value)} />
 
-        <label>
-          参加希望同盟(今回vbv/cbsどちらとして参加するか) / Alliance for this SVS (vbv or cbs)
-        </label>
-        <select value={alliance} onChange={(e) => setAlliance(e.target.value)}>
-          <option value="vbv">vbv</option>
-          <option value="cbs">cbs</option>
-        </select>
+        {round.eventType !== "霜竜" && (
+          <>
+            <label>
+              参加希望同盟(今回vbv/cbsどちらとして参加するか) / Alliance for this SVS (vbv or cbs)
+            </label>
+            <select value={alliance} onChange={(e) => setAlliance(e.target.value)}>
+              <option value="vbv">vbv</option>
+              <option value="cbs">cbs</option>
+            </select>
+          </>
+        )}
 
         <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginTop: 12, marginBottom: 4 }}>
           参加可能な時間帯(複数選択可) / Available time slots (select multiple)
@@ -416,8 +441,8 @@ export default function SvsRoundDetailPage({ params }: { params: { id: string } 
 
         {round.eventType === "霜竜" && (
           <div>
-            <label>総力(自分の数値) / Might</label>
-            <input value={power} onChange={(e) => setPower(e.target.value)} inputMode="numeric" />
+            <label>総力(自分の数値・数字のみで入力、例: 900000000) / Might</label>
+            <input value={power} onChange={(e) => setPower(e.target.value)} inputMode="numeric" placeholder="900000000" />
           </div>
         )}
 
